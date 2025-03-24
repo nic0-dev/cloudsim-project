@@ -3,6 +3,8 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/cloudsim-7.0/modules/cloudsim-examples/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cloudsim-7.0/modules/cloudsim-examples/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cloudsim-7.0/modules/cloudsim-project/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cloudsim-7.0/modules/cloudsim-project/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cloudsim-7.0/modules/cloudsim/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cloudsim-7.0/modules/cloudsim/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cloudsim-7.0/src/main/java" charset="UTF-8" />
