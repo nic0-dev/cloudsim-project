@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "length": 40000,
+    "fileSize": 300,
+    "outputSize": 300,
+    "utilizationCpu": 0.5,
+    "utilizationRam": 0.5,
+    "utilizationBw": 0.5
+  },
+  {
+    "id": 2,
+    "length": 50000,
+    "fileSize": 400,
+    "outputSize": 400,
+    "utilizationCpu": 0.6,
+    "utilizationRam": 0.6,
+    "utilizationBw": 0.6
+  },
+  {
+    "id": 3,
+    "length": 60000,
+    "fileSize": 500,
+    "outputSize": 500,
+    "utilizationCpu": 0.7,
+    "utilizationRam": 0.7,
+    "utilizationBw": 0.7
+  }
+]

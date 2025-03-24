@@ -1,0 +1,182 @@
+[
+    {
+        "id": 1,
+        "length": 27599236,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 2,
+        "length": 15032318,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 3,
+        "length": 28343112,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 4,
+        "length": 20638408,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 5,
+        "length": 21455357,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 6,
+        "length": 14965377,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 7,
+        "length": 28546056,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 8,
+        "length": 22471855,
+        "fileSize": 112,
+        "outputSize": 272,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 9,
+        "length": 25682265,
+        "fileSize": 112,
+        "outputSize": 272,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 10,
+        "length": 17801532,
+        "fileSize": 112,
+        "outputSize": 240,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 11,
+        "length": 26154310,
+        "fileSize": 112,
+        "outputSize": 432,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 12,
+        "length": 25954425,
+        "fileSize": 112,
+        "outputSize": 432,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 13,
+        "length": 21656124,
+        "fileSize": 112,
+        "outputSize": 456,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 14,
+        "length": 21453502,
+        "fileSize": 112,
+        "outputSize": 488,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 15,
+        "length": 23944704,
+        "fileSize": 112,
+        "outputSize": 432,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 16,
+        "length": 22604400,
+        "fileSize": 112,
+        "outputSize": 1176,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 17,
+        "length": 24833760,
+        "fileSize": 112,
+        "outputSize": 1112,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 18,
+        "length": 15313158,
+        "fileSize": 112,
+        "outputSize": 1144,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 19,
+        "length": 35537180,
+        "fileSize": 112,
+        "outputSize": 1080,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    },
+    {
+        "id": 20,
+        "length": 29601271,
+        "fileSize": 112,
+        "outputSize": 1080,
+        "utilizationCpu": 1,
+        "utilizationRam": 1,
+        "utilizationBw": 1
+    }
+]
