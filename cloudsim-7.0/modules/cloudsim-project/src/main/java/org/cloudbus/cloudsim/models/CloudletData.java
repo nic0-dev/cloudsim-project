@@ -1,21 +1,21 @@
-package org.cloudbus.cloudsim.model;
+package org.cloudbus.cloudsim.models;
 
 import org.cloudbus.cloudsim.UtilizationModel;
 
 public class CloudletData {
     private int id;
     private long length;
+    private int pesNumber;
     private long fileSize;
     private long outputSize;
     private UtilizationModel utilizationCpu;
     private UtilizationModel utilizationRam;
     private UtilizationModel utilizationBw;
 
-    // Default constructor (required for Jackson)
-    public CloudletData() { }
-
+    // Constructor
     public CloudletData(int id,
                         long length,
+                        int pesNumber,
                         long fileSize,
                         long outputSize,
                         UtilizationModel utilizationCpu,
@@ -24,6 +24,7 @@ public class CloudletData {
 
         this.id = id;
         this.length = length;
+        this.pesNumber = pesNumber;
         this.fileSize = fileSize;
         this.outputSize = outputSize;
         this.utilizationCpu = utilizationCpu;
@@ -37,6 +38,9 @@ public class CloudletData {
 
     public long getLength() { return length; }
     public void setLength(long length) { this.length = length; }
+
+    public int getPesNumber() { return pesNumber; }
+    public void setPesNumber(int pesNumber) { this.pesNumber = pesNumber; }
 
     public long getFileSize() { return fileSize; }
     public void setFileSize(long fileSize) { this.fileSize = fileSize; }

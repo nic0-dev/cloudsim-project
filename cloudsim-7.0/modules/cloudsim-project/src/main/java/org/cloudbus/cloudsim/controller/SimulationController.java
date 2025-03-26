@@ -12,9 +12,10 @@ import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.entities.*;
 import org.cloudbus.cloudsim.metrics.*;
-import org.cloudbus.cloudsim.model.*;
-import org.cloudbus.cloudsim.policy.*;
-import org.cloudbus.cloudsim.util.*;
+import org.cloudbus.cloudsim.models.*;
+import org.cloudbus.cloudsim.policies.*;
+import org.cloudbus.cloudsim.utils.CloudletCreator;
+import org.cloudbus.cloudsim.utils.CloudletReader;
 
 import java.util.*;
 
@@ -23,14 +24,14 @@ public class SimulationController {
     private static List<Vm> vmList;
     private static Map<String, List<Cloudlet>> tierResults;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         initializeSimulation();
         List<Cloudlet> cloudlets = setupCloudlets();
         runSimulation(cloudlets);
         analyzeResults();
     }
 
-    private static void initializeSimulation() {
+    private static void initializeSimulation() throws Exception {
         int num_user = 1; // Number of cloud users
         Calendar calendar = Calendar.getInstance(); // Calendar whose fields have been initialized with the current date and time.
         boolean trace_flag = false; // Disable detailed trace unless debugging
@@ -45,21 +46,21 @@ public class SimulationController {
         int brokerId = broker.getId();
 
         // Tier Setup
-        Datacenter deviceTier = DeviceDatacenter.createDeviceDatacenter();
-        Datacenter edgeTier = DeviceDatacenter.createEdgeDatacenter();
-        Datacenter cloudTier = DeviceDatacenter.createCloudDatacenter();
+        DeviceDatacenter deviceTier = createDeviceDatacenter();
+//        Datacenter edgeTier = DeviceDatacenter.createEdgeDatacenter();
+//        Datacenter cloudTier = DeviceDatacenter.createCloudDatacenter();
 
         vmList = new ArrayList<>();
         vmList.add(VmAllocationPolicyCustom.createDeviceVm(brokerId));
-        vmList.add(VmAllocationPolicyCustom.createEdgeVm(brokerId));
-        vmList.add(VmAllocationPolicyCustom.createCloudVm(brokerId));
+//        vmList.add(VmAllocationPolicyCustom.createEdgeVm(brokerId));
+//        vmList.add(VmAllocationPolicyCustom.createCloudVm(brokerId));
 
         broker.submitGuestList(vmList);
     }
 
     private static List<Cloudlet> setupCloudlets() {
         List<CloudletData> cloudletDataList = CloudletReader.readCloudletData();
-        System.out.println("Louded Cloudlet Data: " + cloudletDataList.size() + " cloudlets from JSON.");
+        System.out.println("Loaded Cloudlet Data: " + cloudletDataList.size() + " cloudlets from JSON.");
 
         List<Cloudlet> cloudlets = new ArrayList<>();
         TaskOffloadingPolicy taskOffloadingPolicy = new TaskOffloadingPolicy();
@@ -92,10 +93,13 @@ public class SimulationController {
 
     private static void analyzeResults() {
         PerformanceMetricsCalculator calculator = new PerformanceMetricsCalculator();
+        double totalEnergy = 0.0;
 
         for (Map.Entry<String, List<Cloudlet>> entry : tierResults.entrySet()) {
             String tier = entry.getKey();
-            List<Cloudlet> cloudlets = entry.getValue();
+            List<Cloudlet> tierCloudlets = entry.getValue();
+            double tierEnergy = calculator.calculateEnergyConsumption(tierCloudlets, tier);
+            totalEnergy += tierEnergy;
 
             System.out.println("\nResults for " + tier + " tier:");
             System.out.println("Number of tasks: " + tierCloudlets.size());
@@ -104,6 +108,30 @@ public class SimulationController {
             System.out.println("Energy consumption: " +
                 calculator.calculateEnergyConsumption(tierCloudlets, tier) + " J");
         }
+    }
+
+    private static DeviceDatacenter createDeviceDatacenter() throws Exception {
+        DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
+            "x86",          // architecture
+            "Android",      // OS
+            "Mobile",       // VMM
+            getHostList(),  // hostList
+            0.0,           // time zone
+            5.0,           // cost per sec
+            0.05,          // cost per mem
+            0.001,         // cost per storage
+            0.1            // cost per bw
+        );
+        return new DeviceDatacenter(
+            "Device Tier",
+            "device",
+            characteristics,
+            new VmAllocationPolicySimple(getHostList()),
+            new ArrayList<Storage>(),
+            0.1, // scheduling interval
+            50.0,   //bandwidth (50 Mbps for mobile)
+            20.0 // latency (20ms to edge)
+        );
     }
 
     private static int getVmIdForTier(String tier) {

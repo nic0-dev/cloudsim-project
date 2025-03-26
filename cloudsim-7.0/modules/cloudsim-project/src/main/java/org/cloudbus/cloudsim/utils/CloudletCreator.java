@@ -1,8 +1,7 @@
-package org.cloudbus.cloudsim.util;
+package org.cloudbus.cloudsim.utils;
 
-import org.cloudbus.cloudsim.model.CloudletData;
+import org.cloudbus.cloudsim.models.CloudletData;
 import org.cloudbus.cloudsim.Cloudlet;
-import org.cloudbus.cloudsim.UtilizationModelFull;
 
 
 public class CloudletCreator {

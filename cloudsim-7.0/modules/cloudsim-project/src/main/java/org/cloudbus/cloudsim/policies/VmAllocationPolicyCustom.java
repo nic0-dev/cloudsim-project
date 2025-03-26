@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.policy;
+package org.cloudbus.cloudsim.policies;
 
 public class VmAllocationPolicyCustom {
     // Optional

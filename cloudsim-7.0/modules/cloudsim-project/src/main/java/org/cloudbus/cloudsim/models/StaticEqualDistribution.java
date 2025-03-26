@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.model;
+package org.cloudbus.cloudsim.models;
 
 public class StaticEqualDistribution {
 }
