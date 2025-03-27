@@ -22,7 +22,7 @@ public class PerformanceMetricsCalculator {
 
         double totalTime = 0.0;
         for (Cloudlet cloudlet : cloudlets) {
-            totalTime += cloudlet.getFinishTime() - cloudlet.getExecStartTime();
+            totalTime += cloudlet.getExecFinishTime() - cloudlet.getExecStartTime();
         }
         return totalTime / cloudlets.size();
     }
