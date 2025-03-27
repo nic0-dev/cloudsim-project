@@ -1,18 +1,16 @@
 package org.cloudbus.cloudsim.entities;
 
-import org.cloudbus.cloudsim.Datacenter;
-import org.cloudbus.cloudsim.DatacenterCharacteristics;
-import org.cloudbus.cloudsim.Storage;
-import org.cloudbus.cloudsim.VmAllocationPolicy;
+import org.cloudbus.cloudsim.*;
+import org.cloudbus.cloudsim.core.HostEntity;
 
 import java.util.List;
 
-public class DeviceDatacenter extends Datacenter {
+public class CustomDatacenter extends Datacenter {
     private final String tier;  // "device", "edge", or "cloud"
     private final double bandwidth;  // Available bandwidth in Mbps
     private final double latency;    // Network latency in ms
 
-    public DeviceDatacenter(String name,
+    public CustomDatacenter(String name,
                             String tier,
                             DatacenterCharacteristics characteristics,
                             VmAllocationPolicy vmAllocationPolicy,
@@ -25,6 +23,10 @@ public class DeviceDatacenter extends Datacenter {
         this.tier = tier;
         this.bandwidth = bandwidth;
         this.latency = latency;
+
+        for (HostEntity host : getHostList()) {
+            host.setDatacenter(this);
+        }
     }
 
     public String getTier() {
@@ -40,7 +42,7 @@ public class DeviceDatacenter extends Datacenter {
     }
 
     // Helper method to calculate transfer time between datacenters
-    public double calculateTransferTime(long dataSize, DeviceDatacenter target) {
+    public double calculateTransferTime(long dataSize, CustomDatacenter target) {
         // Convert data size from bytes to bits
         double dataSizeBits = dataSize * 8;
         // Calculate transfer time based on bandwidth (in seconds)
