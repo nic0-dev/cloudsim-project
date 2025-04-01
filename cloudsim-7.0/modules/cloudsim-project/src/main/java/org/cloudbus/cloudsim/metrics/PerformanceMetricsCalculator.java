@@ -22,6 +22,9 @@ public class PerformanceMetricsCalculator {
 
         double totalTime = 0.0;
         for (Cloudlet cloudlet : cloudlets) {
+            double executionTime = cloudlet.getExecFinishTime() - cloudlet.getExecStartTime();
+            System.out.print("Cloudlet #" + cloudlet.getCloudletId() + " \t| Finish Time: " + String.format("%.6f", cloudlet.getExecFinishTime()));
+            System.out.println("s\t| Start Time: " + String.format("%.6f", cloudlet.getExecStartTime()) + "s\t\t| Execution Time: " + String.format("%.6f", executionTime) + "s |");
             totalTime += cloudlet.getExecFinishTime() - cloudlet.getExecStartTime();
         }
         return totalTime / cloudlets.size();
@@ -46,11 +49,11 @@ public class PerformanceMetricsCalculator {
         return totalEnergy;
     }
 
-    public double calculateTotalEnergyConsumption(Map<String, List<Cloudlet>> tierResults) {
-        double totalEnergy = 0.0;
-        for (Map.Entry<String, List<Cloudlet>> entry : tierResults.entrySet()) {
-            totalEnergy += calculateEnergyConsumption(entry.getValue(), entry.getKey());
-        }
-        return totalEnergy;
-    }
+//    public double calculateTotalEnergyConsumption(Map<String, List<Cloudlet>> tierResults) {
+//        double totalEnergy = 0.0;
+//        for (Map.Entry<String, List<Cloudlet>> entry : tierResults.entrySet()) {
+//            totalEnergy += calculateEnergyConsumption(entry.getValue(), entry.getKey());
+//        }
+//        return totalEnergy;
+//    }
 }
