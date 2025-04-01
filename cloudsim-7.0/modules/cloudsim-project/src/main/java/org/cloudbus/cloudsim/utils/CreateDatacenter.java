@@ -14,7 +14,8 @@ public class CreateDatacenter {
     public static CustomDatacenter createDeviceDatacenter() throws Exception {
         // Get the host list
         List<Host> hostList = getDeviceHostList();
-
+        System.out.println("Device Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
+        System.out.println("Device Tier: Created Host #" + hostList.getFirst().getId());
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
                 "x86", "Android", "Mobile", hostList, 0.0, 5.0, 0.05, 0.001, 0.1
         );
@@ -27,6 +28,8 @@ public class CreateDatacenter {
 
     public static CustomDatacenter createEdgeDatacenter() throws Exception {
         List<Host> hostList = getEdgeHostList(); // call once
+        System.out.println("Edge Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
+        System.out.println("Edge Tier: Created Host #" + hostList.getFirst().getId());
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
             "x86","Linux","Xen", hostList,0.0,3.0,0.05,0.001, 0.1
         );
@@ -38,6 +41,8 @@ public class CreateDatacenter {
 
     public static CustomDatacenter createCloudDatacenter() throws Exception {
         List<Host> hostList = getCloudHostList(); // call once
+        System.out.println("Cloud Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
+        System.out.println("Cloud Tier: Created Host #" + hostList.getFirst().getId());
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
             "x86", "Linux", "Xen", hostList,0.0,2.0,0.03,0.0005, 0.05            // cost per bw
         );
@@ -56,8 +61,6 @@ public class CreateDatacenter {
 
         List<Pe> peList = new ArrayList<>();
         peList.add(new Pe(0, new PeProvisionerSimple(mips)));
-        peList.add(new Pe(1, new PeProvisionerSimple(mips)));
-
         hostList.add(new Host(0, new RamProvisionerSimple(ram), new BwProvisionerSimple(bw), storage, peList, new VmSchedulerTimeShared(peList)));
         return hostList;
     }
