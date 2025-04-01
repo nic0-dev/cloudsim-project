@@ -503,7 +503,7 @@ public class CloudSim {
 
 		if (future.isEmpty()) {
 			running = false;
-			printMessage(CloudSim.clock()+": Simulation: No more future events");
+			printMessage(String.format("(%.6f", CloudSim.clock())+ "s) "+": Simulation: No more future events");
 			return false;
 		}
 

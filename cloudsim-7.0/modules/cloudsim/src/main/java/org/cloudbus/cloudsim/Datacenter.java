@@ -678,8 +678,40 @@ public class Datacenter extends SimEntity {
 			// time to transfer the files
 			double fileTransferTime = predictFileTransferTime(cl.getRequiredFiles());
 
-			HostEntity host = getVmAllocationPolicy().getHost(vmId, userId);
-			GuestEntity vm = host.getGuest(vmId, userId);
+//			HostEntity host = getVmAllocationPolicy().getHost(vmId, userId);
+//			GuestEntity vm = host.getGuest(vmId, userId);
+			// * Inserted Code: Start *
+			// Find the VM by checking all hosts
+			GuestEntity vm = null;
+			HostEntity host = null;
+
+			// First try to find the VM using VM allocation policy's getHost method
+			for (HostEntity h : getVmAllocationPolicy().getHostList()) {
+				GuestEntity tempVm = h.getGuest(vmId, userId);
+				if (tempVm != null) {
+					vm = tempVm;
+					host = h;
+					break;
+				}
+			}
+
+			// If VM not found, try the actual policy's getHost method with a dummy VM
+			if (vm == null) {
+				// This is a workaround - create a temporary guest entity for lookup
+				GuestEntity dummyGuest = new Vm(vmId, userId, 0, 0, 0, 0, 0, "", null);
+				host = getVmAllocationPolicy().getHost(dummyGuest);
+				if (host != null) {
+					vm = host.getGuest(vmId, userId);
+				}
+			}
+
+			if (vm == null) {
+				Log.printlnConcat(getName(), ".processCloudletSubmit(): ",
+						"Error - VM #" + vmId + " not found for user #" + userId);
+				return;
+			}
+			// * Inserted Code: End *
+
 			CloudletScheduler scheduler = vm.getCloudletScheduler();
 			double estimatedFinishTime = scheduler.cloudletSubmit(cl, fileTransferTime);
 

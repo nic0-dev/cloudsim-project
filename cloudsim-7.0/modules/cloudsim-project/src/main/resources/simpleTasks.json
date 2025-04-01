@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "length": 50,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 2,
+    "length": 55,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 3,
+    "length": 60,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 4,
+    "length": 65,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 5,
+    "length": 70,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 6,
+    "length": 75,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 7,
+    "length": 80,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 8,
+    "length": 85,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 9,
+    "length": 90,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  },
+  {
+    "id": 10,
+    "length": 95,
+    "fileSize": 15,
+    "outputSize": 20,
+    "utilizationCpu": 1,
+    "utilizationRam": 1,
+    "utilizationBw": 1
+  }
+]

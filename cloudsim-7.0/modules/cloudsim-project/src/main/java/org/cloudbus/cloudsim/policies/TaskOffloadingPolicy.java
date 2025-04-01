@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.policy;
+package org.cloudbus.cloudsim.policies;
 
 import org.cloudbus.cloudsim.Cloudlet;
 
@@ -13,8 +13,8 @@ public class TaskOffloadingPolicy {
         // 5) Energy Consumption
         double taskSize = cloudlet.getCloudletLength();
 
-        if (taskSize < 1000) return "device";
-        if (taskSize < 5000) return "edge";
+        if (taskSize <= 60) return "device";
+        if (taskSize <= 75) return "edge";
         return "cloud";
     }
 }
