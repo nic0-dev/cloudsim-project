@@ -23,23 +23,16 @@ public class VmAllocationPolicyCustom extends VmAllocationPolicySimple {
     public boolean allocateHostForGuest(GuestEntity guest) {
         String tier = vmTierMap.getOrDefault(guest.getId(), "cloud"); // Defualt to cloud
         for (HostEntity host : getHostList()) {
-            boolean isCorrectTier = false;
-            if (tier.equals("device")) {
-                isCorrectTier = true;
-            } else if (tier.equals("edge")) {
-                isCorrectTier = true;
-            } else if (tier.equals("cloud")) {
-                isCorrectTier = true;
-            }
-            if (isCorrectTier && host.isSuitableForGuest(guest)) {
-//                return host.guestCreate(guest);
+            if (host.isSuitableForGuest(guest)) {
+                System.out.println("Host #" + host.getId() + " is suitable for Vm #" + guest.getId());
                 boolean result = host.guestCreate(guest);
                 if (result) {
                     vmToHostMap.put(guest.getUid(), host);
+                    System.out.println("Allocated Vm #" + guest.getId() + " to Host #" + host.getId());
                     return true;
                 }
             } else {
-                System.out.println("Host " + host.getId() + " is not suitable for guest " + guest.getId());
+                System.out.println("Host #" + host.getId() + " is not suitable for Vm #" + guest.getId());
             }
         }
         return false;
@@ -47,7 +40,21 @@ public class VmAllocationPolicyCustom extends VmAllocationPolicySimple {
 
     @Override
     public HostEntity getHost(GuestEntity guest) {
-        return vmToHostMap.get(guest.getUid());
+        if (guest == null) {
+            return null;
+        }
+
+        String vmUid = guest.getUid();
+        // Return the host from the mapping we created during allocation
+        return vmToHostMap.get(vmUid);
+    }
+
+    @Override
+    public HostEntity getHost(int vmId, int userId) {
+        // Try to find the host by VM UID
+        String vmUid = GuestEntity.getUid(userId, vmId);
+        System.out.println("Getting host for Vm #" + vmUid);
+        return vmToHostMap.get(vmUid);
     }
 
     @Override

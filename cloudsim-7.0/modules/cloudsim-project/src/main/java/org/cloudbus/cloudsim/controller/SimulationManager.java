@@ -12,7 +12,7 @@ import java.util.*;
 
 public class SimulationManager {
     private DatacenterBroker broker;
-    private final List<Datacenter> datacenters;
+    private final List<CustomDatacenter> datacenters;
     private final List<Vm> vmList;
     private final Map<String, List<Cloudlet>> tierResults;
 
@@ -31,45 +31,58 @@ public class SimulationManager {
 
         broker = new DatacenterBroker("Broker");
         int brokerId = broker.getId();
+        System.out.println("Broker ID: " + brokerId);
 
         datacenters.add(CreateDatacenter.createDeviceDatacenter());
         datacenters.add(CreateDatacenter.createEdgeDatacenter());
         datacenters.add(CreateDatacenter.createCloudDatacenter());
+        System.out.println("Created " + datacenters.size() + (datacenters.size() == 1 ? " Datacenter" : " Datacenters"));
 
         vmList.add(VmAllocationPolicyCustom.createDeviceVm(brokerId));
         vmList.add(VmAllocationPolicyCustom.createEdgeVm(brokerId));
         vmList.add(VmAllocationPolicyCustom.createCloudVm(brokerId));
+        System.out.println("Created " + vmList.size() + (vmList.size() == 1 ? " VM" : " VMs"));
 
         broker.submitGuestList(vmList);
+        System.out.println("Submitted " + vmList.size() + " VMs to Broker ID: " + broker.getId());
     }
 
     public List<Cloudlet> setupCloudlets() {
         List<CloudletData> cloudletDataList = CloudletReader.readCloudletData();
+        int brokerId = broker.getId();
         List<Cloudlet> cloudlets = new ArrayList<>();
         TaskOffloadingPolicy taskOffloadingPolicy = new TaskOffloadingPolicy();
-
+        System.out.println("\n");
         for (CloudletData data : cloudletDataList) {
             Cloudlet cloudlet = CloudletCreator.createCloudlet(data, broker.getId());
             String tier = taskOffloadingPolicy.determineExecutionTier(cloudlet);
-            cloudlet.setGuestId(getVmIdForTier(tier));
+
+            int vmId = getVmIdForTier(tier);
+            System.out.println("Cloudlet " + cloudlet.getCloudletId() + " assigned to Vm #" + vmId + " (" + tier + " tier)");
+            cloudlet.setUserId(brokerId);
+            cloudlet.setGuestId(vmId);
             cloudlets.add(cloudlet);
         }
         broker.submitCloudletList(cloudlets);
+        System.out.println("Submitted " + cloudlets.size() + " Cloudlets to Broker ID: " + broker.getId());
         return cloudlets;
     }
 
     public void runSimulation(List<Cloudlet> cloudlets) {
+        System.out.println("\n==========================\n");
         CloudSim.startSimulation();
         List<Cloudlet> completedCloudlets = broker.getCloudletReceivedList();
+        System.out.println("Cloudlets received: " + completedCloudlets.size());
         tierResults.put("device", new ArrayList<>());
         tierResults.put("edge", new ArrayList<>());
         tierResults.put("cloud", new ArrayList<>());
-
+//
         for (Cloudlet cloudlet : completedCloudlets) {
             String tier = getTierForVmId(cloudlet.getGuestId());
             tierResults.get(tier).add(cloudlet);
         }
         CloudSim.stopSimulation();
+        System.out.println("\n==========================\n");
     }
 
     public void analyzeResults() {
@@ -85,11 +98,11 @@ public class SimulationManager {
             System.out.println("\nResults for " + tier + " tier:");
             System.out.println("Number of tasks: " + tierCloudlets.size());
             System.out.println("Average Execution time: " +
-                    calculator.calculateExecutionTime(tierCloudlets) + " ms");
+                    calculator.calculateExecutionTime(tierCloudlets) + " s");
             System.out.println("Energy consumption: " +
-                    calculator.calculateEnergyConsumption(tierCloudlets, tier) + " J");
+                    String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J");
         }
-        System.out.println("Total Energy consumption: " + totalEnergy + " J");
+        System.out.println("\nTotal Energy consumption: " + String.format("%.6f", totalEnergy) + " J");
     }
 
     private int getVmIdForTier(String tier) {
