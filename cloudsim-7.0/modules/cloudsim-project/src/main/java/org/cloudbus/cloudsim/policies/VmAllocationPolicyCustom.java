@@ -68,11 +68,11 @@ public class VmAllocationPolicyCustom extends VmAllocationPolicySimple {
 
     public static Vm createDeviceVm(int brokerId) {
         int vmid = 0;
-        int mips = 800;    // CPU speed for mobile device
+        int mips = 4000;    // CPU speed for mobile device
         long size = 10000; // Image size (MB)
-        int ram = 1024;    // VM memory (MB)
+        int ram = 4096;    // VM memory (MB)
         long bw = 1000;    // Bandwidth
-        int pesNumber = 1; // Number of CPUs
+        int pesNumber = 4; // Number of CPUs
         String vmm = "Xen"; // VMM name
         vmTierMap.put(vmid, "device");
 

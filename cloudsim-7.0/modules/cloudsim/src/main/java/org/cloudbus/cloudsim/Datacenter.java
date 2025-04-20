@@ -423,7 +423,7 @@ public class Datacenter extends SimEntity {
 			guest.updateCloudletsProcessing(CloudSim.clock(), getVmAllocationPolicy().getHost(guest).getGuestScheduler()
 					.getAllocatedMipsForGuest(guest));
 		} else {
-			Log.printlnConcat(CloudSim.clock(), ": Datacenter.guestAllocator: Couldn't find a host for ", guest.getClassName(), " #", guest.getId());
+			Log.printlnConcat(String.format("(%.6f", CloudSim.clock()), "s) Datacenter.guestAllocator: Couldn't find a host for ", guest.getClassName(), " #", guest.getId());
 		}
 	}
 

@@ -54,14 +54,28 @@ public class CreateDatacenter {
 
     public static List<Host> getDeviceHostList() {
         List<Host> hostList = new ArrayList<>();
-        int mips = 1000;
-        int ram = 2048;
-        long storage = 32768;
-        int bw = 10000;
+
+        int mipsPerCore = 1000; // MIPS per core
+        int numCores = 8;       // For an 8-core Google Pixel 7
+        int ram = 4096;         // Optionally, you can update RAM to 4GB for modern devices
+        long storage = 32768;   // 32 GB storage (can remain unchanged)
+        int bw = 10000;         // Bandwidth
 
         List<Pe> peList = new ArrayList<>();
-        peList.add(new Pe(0, new PeProvisionerSimple(mips)));
-        hostList.add(new Host(0, new RamProvisionerSimple(ram), new BwProvisionerSimple(bw), storage, peList, new VmSchedulerTimeShared(peList)));
+        // Create 8 PEs to aggregate to 8000 MIPS total
+        for (int i = 0; i < numCores; i++) {
+            peList.add(new Pe(i, new PeProvisionerSimple(mipsPerCore)));
+        }
+
+        hostList.add(new Host(
+                0,
+                new RamProvisionerSimple(ram),
+                new BwProvisionerSimple(bw),
+                storage,
+                peList,
+                new VmSchedulerTimeShared(peList)
+        ));
+
         return hostList;
     }
 
