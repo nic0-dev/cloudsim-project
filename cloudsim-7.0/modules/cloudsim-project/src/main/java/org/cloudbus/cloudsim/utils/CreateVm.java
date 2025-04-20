@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.policies;
+package org.cloudbus.cloudsim.utils;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
@@ -10,23 +10,38 @@ import org.cloudbus.cloudsim.core.HostEntity;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-public class VmAllocationPolicyCustom extends VmAllocationPolicySimple {
+/**
+ * VM factory and allocation policy that binds each VM to a specific tier (device/edge/cloud).
+ * Tier mappings are populated at VM creation time and retrieved in ConstrainedCostOptimizer.
+ */
+public class CreateVm extends VmAllocationPolicySimple {
     private static final Map<Integer, String> vmTierMap = new HashMap<>();
     private final Map<String, HostEntity> vmToHostMap = new HashMap<>();
 
-    public VmAllocationPolicyCustom(List<? extends Host> hostlist) {
+    public CreateVm(List<? extends Host> hostlist) {
         super(hostlist);
+    }
+
+    /**
+     * Returns an unmodifiable map of VM ID to tier.  Every VM ID must appear here.
+     */
+    public static Map<Integer,String> getVmTierMap() {
+        return Map.copyOf(vmTierMap);
     }
 
     @Override
     public boolean allocateHostForGuest(GuestEntity guest) {
-        String tier = vmTierMap.getOrDefault(guest.getId(), "cloud"); // Defualt to cloud
+        String tier = Objects.requireNonNull(
+            vmTierMap.get(guest.getId()),
+            () -> "VM #" + guest.getId() + " has no tier mapping"
+        );
         for (HostEntity host : getHostList()) {
             if (host.isSuitableForGuest(guest)) {
                 System.out.println("Host #" + host.getId() + " is suitable for Vm #" + guest.getId());
-                boolean result = host.guestCreate(guest);
-                if (result) {
+                boolean created = host.guestCreate(guest);
+                if (created) {
                     vmToHostMap.put(guest.getUid(), host);
                     System.out.println("Allocated Vm #" + guest.getId() + " to Host #" + host.getId());
                     return true;
@@ -43,15 +58,13 @@ public class VmAllocationPolicyCustom extends VmAllocationPolicySimple {
         if (guest == null) {
             return null;
         }
-
-        String vmUid = guest.getUid();
         // Return the host from the mapping we created during allocation
-        return vmToHostMap.get(vmUid);
+        return vmToHostMap.get(guest.getUid());
     }
 
     @Override
     public HostEntity getHost(int vmId, int userId) {
-        // Try to find the host by VM UID
+        // Find host by VM UID
         String vmUid = GuestEntity.getUid(userId, vmId);
         System.out.println("Getting host for Vm #" + vmUid);
         return vmToHostMap.get(vmUid);
@@ -66,45 +79,48 @@ public class VmAllocationPolicyCustom extends VmAllocationPolicySimple {
         }
     }
 
+    /**
+     * Helper: register and return a device-tier VM
+     */
     public static Vm createDeviceVm(int brokerId) {
-        int vmid = 0;
-        int mips = 4000;    // CPU speed for mobile device
-        long size = 10000; // Image size (MB)
-        int ram = 4096;    // VM memory (MB)
-        long bw = 1000;    // Bandwidth
-        int pesNumber = 4; // Number of CPUs
-        String vmm = "Xen"; // VMM name
-        vmTierMap.put(vmid, "device");
-
-        return new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm,
-                new CloudletSchedulerTimeShared());
+        int vmId = 0;
+        vmTierMap.put(vmId, "device");
+        return new Vm(
+            vmId, brokerId,
+            /* mips */ 4000, /* pes */ 4,
+            /* ram */ 4096, /* bw */ 1000,
+            /* size */ 10000, "Xen",
+            new CloudletSchedulerTimeShared()
+        );
     }
 
+    /**
+     * Helper: register and return an edge-tier VM
+     */
     public static Vm createEdgeVm(int brokerId) {
-        int vmid = 1;
-        int mips = 2500;    // CPU speed for edge server
-        long size = 20000;  // Image size (MB)
-        int ram = 4096;     // VM memory (MB)
-        long bw = 10000;    // Bandwidth
-        int pesNumber = 2;  // Number of CPUs
-        String vmm = "Xen"; // VMM name
-        vmTierMap.put(vmid, "edge");
-
-        return new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm,
-                new CloudletSchedulerTimeShared());
+        int vmId = 1;
+        vmTierMap.put(vmId, "edge");
+        return new Vm(
+            vmId, brokerId,
+            2500, 2,
+            4096, 10000,
+            20000, "Xen",
+            new CloudletSchedulerTimeShared()
+        );
     }
 
+    /**
+     * Helper: register and return a cloud-tier VM
+     */
     public static Vm createCloudVm(int brokerId) {
-        int vmid = 2;
-        int mips = 5000;    // CPU speed for cloud server
-        long size = 40000;  // Image size (MB)
-        int ram = 8192;     // VM memory (MB)
-        long bw = 50000;    // Bandwidth
-        int pesNumber = 4;  // Number of CPUs
-        String vmm = "Xen"; // VMM name
-        vmTierMap.put(vmid, "cloud");
-
-        return new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm,
-                new CloudletSchedulerTimeShared());
+        int vmId = 2;
+        vmTierMap.put(vmId, "cloud");
+        return new Vm(
+            vmId, brokerId,
+            5000, 4,
+            8192, 50000,
+            40000, "Xen",
+            new CloudletSchedulerTimeShared()
+        );
     }
 }

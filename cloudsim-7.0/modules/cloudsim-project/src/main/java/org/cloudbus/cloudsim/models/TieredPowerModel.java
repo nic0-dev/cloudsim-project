@@ -2,40 +2,48 @@ package org.cloudbus.cloudsim.models;
 
 import org.cloudbus.cloudsim.power.models.PowerModel;
 
+/**
+ * A linear power model for device, edge, or cloud tiers.
+ * Power(u) = P_idle + (P_max - P_idle) * u, where u ∈ [0,1]
+ */
 public class TieredPowerModel implements PowerModel {
-    private final double idlePower;     // Power when idle (Watts)
-    private final double maxPower;      // Maximum power (Watts)
-    private final double staticPower;   // Static power consumption (Watts)
-    private final String tierType;      // device, edge, or cloud
+    private double overheadPower;
+    private double idlePower;
+    private double maxPower;
 
+    /**
+     * @param tierType "device", "edge", or "cloud"
+     */
     public TieredPowerModel(String tierType) {
-        this.tierType = tierType;
         switch (tierType) {
             case "device" -> {
-                this.idlePower = 0.5;
-                this.maxPower = 2.5;
-                this.staticPower = 0.3;
+                overheadPower = 0.0;
+                idlePower = 0.5;
+                maxPower = 2.5;
             }
             case "edge" -> {
-                this.idlePower = 120.0;
-                this.maxPower = 250.0;
-                this.staticPower = 100.0;
+                overheadPower = 10.0;
+                idlePower = 120.0;
+                maxPower = 250.0;
             }
             case "cloud" -> {
-                this.idlePower = 200.0;
-                this.maxPower = 400.0;
-                this.staticPower = 180.0;
+                overheadPower = 200.0;
+                idlePower = 200.0;
+                maxPower = 400.0;
             }
-            default -> throw new IllegalArgumentException("Invalid tier type");
+            default -> throw new IllegalArgumentException("Invalid tier type: " + tierType);
         }
     }
 
     @Override
     public double getPower(double utilization) {
-        if (utilization < 0 || utilization > 1) {
+        if (utilization < 0.0 || utilization > 1.0) {
             throw new IllegalArgumentException("Utilization must be between 0 and 1");
         }
-        // Linear power model: static power + dynamic power based on utilization
-        return staticPower + (maxPower - idlePower) * utilization + idlePower;
+        // Linear interpolation between idlePower and maxPower
+        // Previous implementation   -> P(u) = P_static + (P_max - P_idle) * u + P_idle
+        // Simplified implementation -> P(u) = P_idle + (P_max - P_idle) * u
+        double cpuDraw = idlePower + (maxPower - idlePower) * utilization;
+        return overheadPower + cpuDraw;
     }
 }

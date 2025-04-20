@@ -1,4 +1,4 @@
-package org.cloudbus.cloudsim.entities;
+package org.cloudbus.cloudsim.models;
 
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.HostEntity;

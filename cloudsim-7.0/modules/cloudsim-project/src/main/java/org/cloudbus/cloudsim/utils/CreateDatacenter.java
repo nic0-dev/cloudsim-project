@@ -1,8 +1,7 @@
 package org.cloudbus.cloudsim.utils;
 
 import org.cloudbus.cloudsim.*;
-import org.cloudbus.cloudsim.entities.CustomDatacenter;
-import org.cloudbus.cloudsim.policies.VmAllocationPolicyCustom;
+import org.cloudbus.cloudsim.models.CustomDatacenter;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -21,7 +20,7 @@ public class CreateDatacenter {
         );
 
         return new CustomDatacenter(
-                "Device_Tier", "device", characteristics, new VmAllocationPolicyCustom(hostList),
+                "Device_Tier", "device", characteristics, new CreateVm(hostList),
                 new ArrayList<>(), 0.1, 50.0, 20.0
         );
     }
@@ -35,7 +34,7 @@ public class CreateDatacenter {
         );
 
         return new CustomDatacenter(
-            "Edge_Tier","edge",characteristics, new VmAllocationPolicyCustom(hostList),new ArrayList<>(),0.1,1000.0, 10.0
+            "Edge_Tier","edge",characteristics, new CreateVm(hostList),new ArrayList<>(),0.1,1000.0, 10.0
         );
     }
 
@@ -48,7 +47,7 @@ public class CreateDatacenter {
         );
 
         return new CustomDatacenter(
-        "Cloud_Tier","cloud",characteristics,new VmAllocationPolicyCustom(hostList),new ArrayList<>(),0.1,10000.0,0.0
+        "Cloud_Tier","cloud",characteristics,new CreateVm(hostList),new ArrayList<>(),0.1,10000.0,0.0
         );
     }
 

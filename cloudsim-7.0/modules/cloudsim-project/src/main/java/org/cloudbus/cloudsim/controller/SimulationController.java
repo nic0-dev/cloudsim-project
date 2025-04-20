@@ -16,8 +16,8 @@ public class SimulationController {
     public static void main(String[] args) throws Exception {
         SimulationManager simulationManager = new SimulationManager();
         simulationManager.initializeSimulation();
-        List<Cloudlet> cloudlets = simulationManager.setupCloudlets();
-        simulationManager.runSimulation(cloudlets);
+        simulationManager.setupCloudlets();
+        simulationManager.runSimulation();
         simulationManager.analyzeResults();
     }
 }

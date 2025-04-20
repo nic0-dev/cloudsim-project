@@ -2,25 +2,26 @@ package org.cloudbus.cloudsim.controller;
 
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.entities.*;
+import org.cloudbus.cloudsim.cost.*;
 import org.cloudbus.cloudsim.metrics.*;
 import org.cloudbus.cloudsim.models.*;
 import org.cloudbus.cloudsim.policies.*;
+import org.cloudbus.cloudsim.policies.VmAllocationPolicy;
 import org.cloudbus.cloudsim.utils.*;
 
 import java.util.*;
 
 public class SimulationManager {
     private DatacenterBroker broker;
-    private final List<CustomDatacenter> datacenters;
-    private final List<Vm> vmList;
-    private final Map<String, List<Cloudlet>> tierResults;
+    private final List<CustomDatacenter> datacenters = new ArrayList<>();
+    private final List<Vm> vmList = new ArrayList<>();
+    private final Map<String, List<Cloudlet>> tierResults = new HashMap<>();
 
-    public SimulationManager() {
-        datacenters = new ArrayList<>();
-        vmList = new ArrayList<>();
-        tierResults = new HashMap<>();
-    }
+    private TierSelectionPolicy tierPolicy;
+    private Map<String,VmAllocationPolicy> vmAllocMap;
+
+    // Maximum allowed round-trip latency in seconds
+    private static final double L_MAX = 0.1;
 
     public void initializeSimulation() throws Exception {
         int num_user = 1;
@@ -38,49 +39,73 @@ public class SimulationManager {
         datacenters.add(CreateDatacenter.createCloudDatacenter());
         System.out.println("Created " + datacenters.size() + (datacenters.size() == 1 ? " Datacenter" : " Datacenters"));
 
-        vmList.add(VmAllocationPolicyCustom.createDeviceVm(brokerId));
-        vmList.add(VmAllocationPolicyCustom.createEdgeVm(brokerId));
-        vmList.add(VmAllocationPolicyCustom.createCloudVm(brokerId));
+        vmList.add(CreateVm.createDeviceVm(brokerId));
+        vmList.add(CreateVm.createEdgeVm(brokerId));
+        vmList.add(CreateVm.createCloudVm(brokerId));
         System.out.println("Created " + vmList.size() + (vmList.size() == 1 ? " VM" : " VMs"));
 
         broker.submitGuestList(vmList);
         System.out.println("Submitted " + vmList.size() + " VMs to Broker ID: " + broker.getId());
+
+        CostModel heuristic = new HeuristicCostModel();
+        tierPolicy = new ConstrainedCostOptimizer(L_MAX, heuristic);
+        tierPolicy.initialize(vmList);
+
+        // policy = new DynamicOffloadingPolicy();
+        vmAllocMap = new HashMap<>();
+        for (String tier : List.of("device","edge","cloud")) {
+            List<Vm> tierVms = tierPolicy.getVmsForTier(tier);
+            VmAllocationPolicy offload = new StaticEqualDistribution();
+            // VmAllocationPolicy offload = new DynamicThrottled();
+            offload.initialize(tierVms);
+            vmAllocMap.put(tier, offload);
+        }
     }
 
-    public List<Cloudlet> setupCloudlets() {
+    /**
+     * Bind & submit all cloudlets
+     */
+    public void setupCloudlets() {
+        List<Cloudlet> submittedCloudlets = new ArrayList<>();
         List<CloudletData> cloudletDataList = CloudletReader.readCloudletData();
-        int brokerId = broker.getId();
-        List<Cloudlet> cloudlets = new ArrayList<>();
-        TaskOffloadingPolicy taskOffloadingPolicy = new TaskOffloadingPolicy();
+
         System.out.println("\n");
         for (CloudletData data : cloudletDataList) {
-            Cloudlet cloudlet = CloudletCreator.createCloudlet(data, broker.getId());
-            String tier = taskOffloadingPolicy.determineExecutionTier(cloudlet);
+            Cloudlet c = CloudletCreator.createCloudlet(data, broker.getId());
+            c.setUserId(broker.getId());
 
-            int vmId = getVmIdForTier(tier);
-            System.out.println("Cloudlet " + cloudlet.getCloudletId() + " assigned to Vm #" + vmId + " (" + tier + " tier)");
-            cloudlet.setUserId(brokerId);
-            cloudlet.setGuestId(vmId);
-            cloudlets.add(cloudlet);
+            String tier = tierPolicy.selectTier(c);
+            VmAllocationPolicy offload = vmAllocMap.get(tier);
+            int vmId = offload.allocate(c);
+            c.setGuestId(vmId);
+            submittedCloudlets.add(c);
         }
-        broker.submitCloudletList(cloudlets);
-        System.out.println("Submitted " + cloudlets.size() + " Cloudlets to Broker ID: " + broker.getId());
-        return cloudlets;
+        broker.submitCloudletList(submittedCloudlets);
+        System.out.println("Submitted Cloudlets to Broker ID: " + broker.getId());
     }
 
-    public void runSimulation(List<Cloudlet> cloudlets) {
+    /** Run, deallocate on completion, bucket results by tier. */
+    public void runSimulation() {
         System.out.println("\n==========================\n");
         CloudSim.startSimulation();
         List<Cloudlet> completedCloudlets = broker.getCloudletReceivedList();
+
         System.out.println("Cloudlets received: " + completedCloudlets.size());
-        tierResults.put("device", new ArrayList<>());
-        tierResults.put("edge", new ArrayList<>());
-        tierResults.put("cloud", new ArrayList<>());
-//
-        for (Cloudlet cloudlet : completedCloudlets) {
-            String tier = getTierForVmId(cloudlet.getGuestId());
-            tierResults.get(tier).add(cloudlet);
+        tierResults.clear();
+        for (String t : List.of("device","edge","cloud")) {
+            tierResults.put(t, new ArrayList<>());
         }
+
+        var tierMap = CreateVm.getVmTierMap();
+        for (Cloudlet c : completedCloudlets) {
+            int vmId = c.getGuestId();
+            String tier = tierMap.get(vmId);
+            // free the VM slot
+            vmAllocMap.get(tier).deallocate(vmId);
+            // record
+            tierResults.get(tier).add(c);
+        }
+
         CloudSim.stopSimulation();
         System.out.println("\n==========================\n");
     }
@@ -103,21 +128,5 @@ public class SimulationManager {
                     String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J");
         }
         System.out.println("\nTotal Energy consumption: " + String.format("%.6f", totalEnergy) + " J");
-    }
-
-    private int getVmIdForTier(String tier) {
-        return switch (tier) {
-            case "device" -> vmList.get(0).getId();
-            case "edge" -> vmList.get(1).getId();
-            case "cloud" -> vmList.get(2).getId();
-            default -> throw new IllegalArgumentException("Invalid tier: " + tier);
-        };
-    }
-
-    private String getTierForVmId(int vmId) {
-        if (vmId == vmList.get(0).getId()) return "device";
-        if (vmId == vmList.get(1).getId()) return "edge";
-        if (vmId == vmList.get(2).getId()) return "cloud";
-        throw new IllegalArgumentException("Invalid VM ID: " + vmId);
     }
 }

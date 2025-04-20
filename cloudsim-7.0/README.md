@@ -8,6 +8,39 @@ CloudSim is developed in [the Cloud Computing and Distributed Systems (CLOUDS) L
 
 More information can be found on the [CloudSim's web site](http://cloudbus.org/cloudsim/).
 
+# 📂 Project Structure
+
+src/main/java/<br>
+└── org.cloudbus.cloudsim<br>
+│<br>
+├── controller<br>
+│   ├── SimulationController.java<br>
+│   └── SimulationManager.java       ← uses OffloadingPolicy<br>
+│<br>
+├── policies<br>
+│   ├── OffloadingPolicy.java        ← initialize(), allocate(), deallocate()<br>
+│   ├── StaticEqualDistribution.java<br>
+│   ├── DynamicThrottled.java<br>
+│   ├── ConstrainedCostOptimizer.java<br>
+│   └── RLOffloadingPolicy.java      ← future Q‑learning
+│<br>
+├── cost<br>
+│   ├── CostModel.java               ← energy(), latency()<br>
+│   └── HeuristicCostModel.java      ← empirical / profiling‑based<br>
+│<br>
+├── models<br>
+│   ├── CloudletData.java<br>
+│   ├── TieredPowerModel.java<br>
+│<br>
+├── utils<br>
+│   ├── CreateDatacenter.java<br>
+│   ├── CloudletReader.java<br>
+│   └── CloudletCreator.java<br>
+│<br>
+└── metrics<br>
+│<br>
+└── PerformanceMetricsCalculator.java<br>
+
 
 # Main features #
 
