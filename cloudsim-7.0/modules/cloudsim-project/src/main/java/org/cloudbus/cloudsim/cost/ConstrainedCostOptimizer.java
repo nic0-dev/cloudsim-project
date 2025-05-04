@@ -53,7 +53,7 @@ public class ConstrainedCostOptimizer implements TierSelectionPolicy {
      */
     @Override
     public String selectTier(Cloudlet cloudlet) {
-        String selectedTier = "cloud";
+        String selectedTier = "device";
         double minEnergy = Double.MAX_VALUE;
         List<String> tiers = List.of("device", "edge", "cloud");
 

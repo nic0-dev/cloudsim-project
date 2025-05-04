@@ -21,7 +21,7 @@ public class SimulationManager {
     private Map<String,VmAllocationPolicy> vmAllocMap;
 
     // Maximum allowed round-trip latency in seconds
-    private static final double L_MAX = 0.1;
+    private static final double L_MAX = 0.1; // #TODO: decrease
 
     public void initializeSimulation() throws Exception {
         int num_user = 1;
@@ -39,9 +39,9 @@ public class SimulationManager {
         datacenters.add(CreateDatacenter.createCloudDatacenter());
         System.out.println("Created " + datacenters.size() + (datacenters.size() == 1 ? " Datacenter" : " Datacenters"));
 
-        vmList.add(CreateVm.createDeviceVm(brokerId));
-        vmList.add(CreateVm.createEdgeVm(brokerId));
-        vmList.add(CreateVm.createCloudVm(brokerId));
+        vmList.addAll(CreateVm.createDeviceVms(brokerId, 5));
+        vmList.addAll(CreateVm.createEdgeVms(brokerId, 5));
+        vmList.addAll(CreateVm.createCloudVms(brokerId, 5));
         System.out.println("Created " + vmList.size() + (vmList.size() == 1 ? " VM" : " VMs"));
 
         broker.submitGuestList(vmList);
@@ -51,12 +51,11 @@ public class SimulationManager {
         tierPolicy = new ConstrainedCostOptimizer(L_MAX, heuristic);
         tierPolicy.initialize(vmList);
 
-        // policy = new DynamicOffloadingPolicy();
         vmAllocMap = new HashMap<>();
         for (String tier : List.of("device","edge","cloud")) {
             List<Vm> tierVms = tierPolicy.getVmsForTier(tier);
             VmAllocationPolicy offload = new StaticEqualDistribution();
-            // VmAllocationPolicy offload = new DynamicThrottled();
+//             VmAllocationPolicy offload = new DynamicThrottled();
             offload.initialize(tierVms);
             vmAllocMap.put(tier, offload);
         }

@@ -8,10 +8,6 @@ package org.cloudbus.cloudsim.controller;
  * Authors: Cagas, Mark Nicholas; Saw, Christyne Joie
  */
 
-import org.cloudbus.cloudsim.Cloudlet;
-
-import java.util.List;
-
 public class SimulationController {
     public static void main(String[] args) throws Exception {
         SimulationManager simulationManager = new SimulationManager();

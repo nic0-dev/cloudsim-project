@@ -56,7 +56,6 @@ public class StaticEqualDistribution implements VmAllocationPolicy {
         }
         // Update count (binding is done by SimulationManager)
         allocationCounts.put(selectedVmId, minCount + 1);
-//        cloudlet.setGuestId(selectedVmId);
         return selectedVmId;
     }
 

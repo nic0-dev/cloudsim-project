@@ -10,11 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CreateDatacenter {
+    private static final int HOSTS_PER_TIER = 3;    // Create 3 hosts per tier
+
     public static CustomDatacenter createDeviceDatacenter() throws Exception {
         // Get the host list
         List<Host> hostList = getDeviceHostList();
         System.out.println("Device Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
-        System.out.println("Device Tier: Created Host #" + hostList.getFirst().getId());
+        for (Host host : hostList) {
+            System.out.println("Device Tier: Created Host #" + host.getId());
+        }
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
                 "x86", "Android", "Mobile", hostList, 0.0, 5.0, 0.05, 0.001, 0.1
         );
@@ -28,7 +32,9 @@ public class CreateDatacenter {
     public static CustomDatacenter createEdgeDatacenter() throws Exception {
         List<Host> hostList = getEdgeHostList(); // call once
         System.out.println("Edge Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
-        System.out.println("Edge Tier: Created Host #" + hostList.getFirst().getId());
+        for (Host host : hostList) {
+            System.out.println("Edge Tier: Created Host #" + host.getId());
+        }
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
             "x86","Linux","Xen", hostList,0.0,3.0,0.05,0.001, 0.1
         );
@@ -41,7 +47,9 @@ public class CreateDatacenter {
     public static CustomDatacenter createCloudDatacenter() throws Exception {
         List<Host> hostList = getCloudHostList(); // call once
         System.out.println("Cloud Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
-        System.out.println("Cloud Tier: Created Host #" + hostList.getFirst().getId());
+        for (Host host : hostList) {
+            System.out.println("Cloud Tier: Created Host #" + host.getId());
+        }
         DatacenterCharacteristics characteristics = new DatacenterCharacteristics(
             "x86", "Linux", "Xen", hostList,0.0,2.0,0.03,0.0005, 0.05            // cost per bw
         );
@@ -54,59 +62,67 @@ public class CreateDatacenter {
     public static List<Host> getDeviceHostList() {
         List<Host> hostList = new ArrayList<>();
 
-        int mipsPerCore = 1000; // MIPS per core
+        int mipsPerCore = 1200; // MIPS per core
         int numCores = 8;       // For an 8-core Google Pixel 7
-        int ram = 4096;         // Optionally, you can update RAM to 4GB for modern devices
-        long storage = 32768;   // 32 GB storage (can remain unchanged)
-        int bw = 10000;         // Bandwidth
+        int ram = 6144;         // 6GB
+        long storage = 40000;   //
+        int bw = 12000;         // Bandwidth
 
-        List<Pe> peList = new ArrayList<>();
-        // Create 8 PEs to aggregate to 8000 MIPS total
-        for (int i = 0; i < numCores; i++) {
-            peList.add(new Pe(i, new PeProvisionerSimple(mipsPerCore)));
+        for (int hostId = 0; hostId < HOSTS_PER_TIER; hostId++) {
+            List<Pe> peList = new ArrayList<>();
+            // Create 8 PEs to aggregate to 8000 MIPS total
+            for (int i = 0; i < numCores; i++) {
+                peList.add(new Pe(i, new PeProvisionerSimple(mipsPerCore)));
+            }
+
+            hostList.add(new Host(
+                    hostId,
+                    new RamProvisionerSimple(ram),
+                    new BwProvisionerSimple(bw),
+                    storage,
+                    peList,
+                    new VmSchedulerTimeShared(peList)
+            ));
         }
-
-        hostList.add(new Host(
-                0,
-                new RamProvisionerSimple(ram),
-                new BwProvisionerSimple(bw),
-                storage,
-                peList,
-                new VmSchedulerTimeShared(peList)
-        ));
 
         return hostList;
     }
 
     public static List<Host> getEdgeHostList() {
         List<Host> hostList = new ArrayList<>();
-        int mips = 2500;
-        int ram = 8192;
+        int mips = 2800;
+        int numCores = 4;
+        int ram = 10240;
         long storage = 1000000;
-        int bw = 25000;
+        int bw = 30000;
 
-        List<Pe> peList = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
-            peList.add(new Pe(i, new PeProvisionerSimple(mips)));
+        for (int hostId = HOSTS_PER_TIER; hostId < HOSTS_PER_TIER * 2; hostId++) {
+            List<Pe> peList = new ArrayList<>();
+            for (int i = 0; i < numCores; i++) {
+                peList.add(new Pe(i, new PeProvisionerSimple(mips)));
+            }
+
+            hostList.add(new Host(hostId, new RamProvisionerSimple(ram), new BwProvisionerSimple(bw), storage, peList, new VmSchedulerTimeShared(peList)));
         }
-
-        hostList.add(new Host(1, new RamProvisionerSimple(ram), new BwProvisionerSimple(bw), storage, peList, new VmSchedulerTimeShared(peList)));
         return hostList;
     }
 
     public static List<Host> getCloudHostList() {
         List<Host> hostList = new ArrayList<>();
-        int mips = 5000;
-        int ram = 16384;
+        int mips = 5500;
+        int numCores = 8;
+        int ram = 20480;
         long storage = 10000000;
-        int bw = 100000;
+        int bw = 120000;
 
-        List<Pe> peList = new ArrayList<>();
-        for (int i = 0; i < 8; i++) {
-            peList.add(new Pe(i, new PeProvisionerSimple(mips)));
+        for (int hostId = HOSTS_PER_TIER * 2; hostId < HOSTS_PER_TIER * 3; hostId++) {
+            List<Pe> peList = new ArrayList<>();
+            for (int i = 0; i < numCores; i++) {
+                peList.add(new Pe(i, new PeProvisionerSimple(mips)));
+            }
+
+            hostList.add(new Host(hostId, new RamProvisionerSimple(ram), new BwProvisionerSimple(bw), storage, peList, new VmSchedulerTimeShared(peList)));
         }
-
-        hostList.add(new Host(2, new RamProvisionerSimple(ram), new BwProvisionerSimple(bw), storage, peList, new VmSchedulerTimeShared(peList)));
         return hostList;
     }
 }

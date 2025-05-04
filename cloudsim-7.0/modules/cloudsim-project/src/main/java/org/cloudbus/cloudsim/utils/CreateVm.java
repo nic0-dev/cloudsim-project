@@ -7,10 +7,7 @@ import org.cloudbus.cloudsim.CloudletSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.GuestEntity;
 import org.cloudbus.cloudsim.core.HostEntity;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * VM factory and allocation policy that binds each VM to a specific tier (device/edge/cloud).
@@ -19,6 +16,7 @@ import java.util.Objects;
 public class CreateVm extends VmAllocationPolicySimple {
     private static final Map<Integer, String> vmTierMap = new HashMap<>();
     private final Map<String, HostEntity> vmToHostMap = new HashMap<>();
+    private static int nextVmId = 0;
 
     public CreateVm(List<? extends Host> hostlist) {
         super(hostlist);
@@ -82,45 +80,48 @@ public class CreateVm extends VmAllocationPolicySimple {
     /**
      * Helper: register and return a device-tier VM
      */
-    public static Vm createDeviceVm(int brokerId) {
-        int vmId = 0;
-        vmTierMap.put(vmId, "device");
-        return new Vm(
-            vmId, brokerId,
-            /* mips */ 4000, /* pes */ 4,
-            /* ram */ 4096, /* bw */ 1000,
-            /* size */ 10000, "Xen",
-            new CloudletSchedulerTimeShared()
-        );
+    public static List<Vm> createDeviceVms(int brokerId, int count) {
+        List<Vm> vms = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            int vmId = nextVmId++;
+            vmTierMap.put(vmId, "device");
+            vms.add(new Vm(vmId, brokerId, 1000, 4,
+                2048, 1000, 10000, "Xen",
+                new CloudletSchedulerTimeShared()
+            ));
+        }
+        return vms;
     }
 
     /**
      * Helper: register and return an edge-tier VM
      */
-    public static Vm createEdgeVm(int brokerId) {
-        int vmId = 1;
-        vmTierMap.put(vmId, "edge");
-        return new Vm(
-            vmId, brokerId,
-            2500, 2,
-            4096, 10000,
-            20000, "Xen",
-            new CloudletSchedulerTimeShared()
-        );
+    public static List<Vm> createEdgeVms(int brokerId, int count) {
+        List<Vm> vms = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            int vmId = nextVmId++;
+            vmTierMap.put(vmId, "edge");
+            vms.add(new Vm(vmId, brokerId, 2400, 2,
+                3072, 10000, 20000, "Xen",
+                new CloudletSchedulerTimeShared()
+            ));
+        }
+        return vms;
     }
 
     /**
      * Helper: register and return a cloud-tier VM
      */
-    public static Vm createCloudVm(int brokerId) {
-        int vmId = 2;
-        vmTierMap.put(vmId, "cloud");
-        return new Vm(
-            vmId, brokerId,
-            5000, 4,
-            8192, 50000,
-            40000, "Xen",
-            new CloudletSchedulerTimeShared()
-        );
+    public static List<Vm> createCloudVms(int brokerId, int count) {
+        List<Vm> vms = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            int vmId = nextVmId++;
+            vmTierMap.put(vmId, "cloud");
+            vms.add(new Vm(vmId, brokerId, 5000, 4,
+                8192, 50000, 40000, "Xen",
+                new CloudletSchedulerTimeShared()
+            ));
+        }
+        return vms;
     }
 }
