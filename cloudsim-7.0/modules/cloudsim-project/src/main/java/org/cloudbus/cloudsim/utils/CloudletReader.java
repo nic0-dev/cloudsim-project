@@ -15,12 +15,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CloudletReader {
+    private static long minLength = Integer.MAX_VALUE;;
+    private static long maxLength = 0;
+
     public static List<CloudletData> readCloudletData()  {
         List<CloudletData> cloudletDataList = new ArrayList<>();
         JSONParser parser = new JSONParser();
 
         try {
-            InputStream inputStream = CloudletReader.class.getClassLoader().getResourceAsStream("profilingRuns.json");
+            InputStream inputStream = CloudletReader.class.getClassLoader().getResourceAsStream("cloudlets_20.json");
 
             if (inputStream == null) {
                 throw new FileNotFoundException("profilingRuns.json not found in classpath");
@@ -34,6 +37,9 @@ public class CloudletReader {
 
                 int id = ((Long) jsonObject.get("id")).intValue();
                 long length = (Long) jsonObject.get("length");
+                minLength = Math.min(minLength, length);
+                maxLength = Math.max(maxLength, length);
+
                 int pesNumber = 1; // TODO: set pesNumber based on tier
                 long fileSize = (Long) jsonObject.get("fileSize");
                 long outputSize = (Long) jsonObject.get("outputSize");
@@ -48,5 +54,13 @@ public class CloudletReader {
             e.printStackTrace();
         }
         return cloudletDataList;
+    }
+    // get minLength and maxLength
+    public static long getMinLength() {
+        return minLength;
+    }
+
+    public static long getMaxLength() {
+        return maxLength;
     }
 }

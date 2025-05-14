@@ -2,6 +2,7 @@ package org.cloudbus.cloudsim.cost;
 
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.models.TieredPowerModel;
+import org.cloudbus.cloudsim.utils.CloudletReader;
 
 /**
  * Estimates execution latency and energy
@@ -13,13 +14,15 @@ import org.cloudbus.cloudsim.models.TieredPowerModel;
 
 public class HeuristicCostModel implements CostModel {
     // Tier MIPS
-    private static final double DEVICE_MIPS = 8000.0; // Pixel 7 total
-    private static final double EDGE_MIPS = 10000.0;
-    private static final double CLOUD_MIPS = 40000.0;
-
-    private static final double LATENCY_EDGE = 0.05;
-    private static final double LATENCY_CLOUD = 0.15;
-    private static final double BW_UPLINK   = 10000000.0; // 10 Mbps
+    private static final double DEVICE_MIPS = 1200.0; // Pixel 7 total
+    private static final double EDGE_MIPS = 8000.0;
+    private static final double CLOUD_MIPS = 20000.0;
+    // Previous Values
+//      private static final double EDGE_MIPS = 2500.0;
+//      private static final double CLOUD_MIPS = 5000.0;
+//    private static final double LATENCY_EDGE = 0.05;
+//    private static final double LATENCY_CLOUD = 0.15;
+    private static final double BW_UPLINK   = 100000000; // 10 Mbps
     private static final double BW_DOWNLINK = 100000000.0; // 100 Mbps
 
     private final TieredPowerModel devicePower = new TieredPowerModel("device");
@@ -40,7 +43,6 @@ public class HeuristicCostModel implements CostModel {
                 executionTime = length / EDGE_MIPS;
                 // executionTime = 30 / 10000 = 0.003
                 netRTT = (c.getCloudletFileSize() / BW_UPLINK) + (c.getCloudletOutputSize() / BW_DOWNLINK);
-//                netRTT = LATENCY_EDGE * 2;
                 // netRTT = 112 / 10000000 + 1000 / 100000000 = 0.0000112 + 0.00000112 = 0.00001232
                 // netRTT = 19764352 / 10000000 + 1000 / 10000000 = 1.9764352 + 0.0001 = 1.9765352
             }
@@ -56,7 +58,9 @@ public class HeuristicCostModel implements CostModel {
 
     @Override
     public double energy(Cloudlet c, String tier) {
-        double util = c.getUtilizationOfCpu(0.0); // assume steady-state at start
+        double minLength = CloudletReader.getMinLength();
+        double maxLength = CloudletReader.getMaxLength();
+        double util = (c.getCloudletLength() - minLength) / (maxLength - minLength);
         double executionTime;
         double power;
 

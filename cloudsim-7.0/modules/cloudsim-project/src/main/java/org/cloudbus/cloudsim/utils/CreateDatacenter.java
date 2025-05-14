@@ -90,7 +90,7 @@ public class CreateDatacenter {
 
     public static List<Host> getEdgeHostList() {
         List<Host> hostList = new ArrayList<>();
-        int mips = 2800;
+        int mips = 8000;
         int numCores = 4;
         int ram = 10240;
         long storage = 1000000;
@@ -109,7 +109,7 @@ public class CreateDatacenter {
 
     public static List<Host> getCloudHostList() {
         List<Host> hostList = new ArrayList<>();
-        int mips = 5500;
+        int mips = 20000;
         int numCores = 8;
         int ram = 20480;
         long storage = 10000000;

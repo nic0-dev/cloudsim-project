@@ -59,15 +59,17 @@ public class ConstrainedCostOptimizer implements TierSelectionPolicy {
 
         for (String tier : tiers) {
             double latency = costModel.latency(cloudlet, tier);
+//            System.out.println(tier + " tier's latency " + latency);
+            double energy = costModel.energy(cloudlet, tier);
+//            System.out.println(tier + " tier's energy " + energy);
             if (latency <= L_MAX) {
-                double energy = costModel.energy(cloudlet, tier);
                 if (energy < minEnergy) {
                     minEnergy = energy;
                     selectedTier = tier;
                 }
             }
         }
-
+//        System.out.println("Selected Tier: " + selectedTier + "\n");
         return selectedTier;
     }
 

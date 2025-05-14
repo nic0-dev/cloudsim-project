@@ -9,7 +9,7 @@ import java.util.*;
  * Static offloading policy: distributes cloudlets evenly across a fixed VM list
  * by always assigning to the VM with the fewest previous allocations.
  */
-public class StaticEqualDistribution implements VmAllocationPolicy {
+public class StaticEqualDistribution implements OffloadingPolicy {
     private List<Vm> vmList;
     private Map<Integer, Integer> allocationCounts;
 
@@ -54,7 +54,6 @@ public class StaticEqualDistribution implements VmAllocationPolicy {
                 selectedVmId = vmId;
             }
         }
-        // Update count (binding is done by SimulationManager)
         allocationCounts.put(selectedVmId, minCount + 1);
         return selectedVmId;
     }
@@ -69,5 +68,11 @@ public class StaticEqualDistribution implements VmAllocationPolicy {
             throw new IllegalStateException("StaticEqualDistribution not initialized");
         }
         allocationCounts.computeIfPresent(vmId, (id, count) -> Math.max(0, count - 1));
+    }
+
+    @Override
+    public void onCloudletCompletion(int vmId, Cloudlet cloudlet) {
+        // fall back to decrementing the count (so it stays balanced over time)
+        deallocate(vmId);
     }
 }

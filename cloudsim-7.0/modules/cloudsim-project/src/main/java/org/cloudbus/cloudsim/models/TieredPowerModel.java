@@ -18,18 +18,18 @@ public class TieredPowerModel implements PowerModel {
         switch (tierType) {
             case "device" -> {
                 overheadPower = 0.0;
-                idlePower = 0.5;
-                maxPower = 2.5;
+                idlePower = 2.0;
+                maxPower = 3.0;
             }
             case "edge" -> {
-                overheadPower = 10.0;
-                idlePower = 120.0;
-                maxPower = 250.0;
+                overheadPower = 4.0;
+                idlePower = 12.0;
+                maxPower = 20.0;
             }
             case "cloud" -> {
-                overheadPower = 200.0;
-                idlePower = 200.0;
-                maxPower = 400.0;
+                overheadPower = 10.0;
+                idlePower = 15.0;
+                maxPower = 30.0;
             }
             default -> throw new IllegalArgumentException("Invalid tier type: " + tierType);
         }

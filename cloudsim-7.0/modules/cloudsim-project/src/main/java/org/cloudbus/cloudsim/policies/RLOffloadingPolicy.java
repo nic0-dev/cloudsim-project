@@ -1,4 +1,164 @@
 package org.cloudbus.cloudsim.policies;
 
-public class RLOffloadingPolicy {
+import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.cost.CostModel;
+import org.cloudbus.cloudsim.utils.CreateVm;
+
+import java.util.*;
+
+/**
+ * A Q-learning based offloading policy that jointly optimizes latency and energy.
+ * Reward = - (latency + λ * energy), with a hard penalty if latency > L_MAX.
+ */
+public class RLOffloadingPolicy implements OffloadingPolicy {
+    private final CostModel costModel;
+    private final double L_MAX;
+    private final double lambda;
+
+    private List<Vm> vmList;
+    private Map<Integer, Double> qValues;
+    private Map<Integer, Integer> allocations;
+    private Map<Integer, String> vmTierMap;
+    private Map<Integer, Double> lastEpisodeQ = new HashMap<>();
+
+    // track cumulative reward for the current episode
+    private double currentEpisodeReward = 0.0;
+
+    private double learningRate = 0.1;      // α
+    private double discountFactor = 0.9;    // γ
+    private double explorationRate = 0.1;   // ε
+    private double qValueChangeThreshold = 1e-5;
+    private int episodeCount = 0;
+    private Random random = new Random();
+
+    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda) {
+        this.costModel = Objects.requireNonNull(costModel, "costModel");
+        this.L_MAX    = L_MAX;
+        this.lambda   = lambda;
+    }
+
+    @Override
+    public void initialize(List<Vm> vmList) {
+        if (vmList == null || vmList.isEmpty()) {
+            throw new IllegalArgumentException("VM list must be non-null and non-empty");
+        }
+        this.vmList = new ArrayList<>(vmList);
+        qValues = new HashMap<>();
+        allocations = new HashMap<>();
+        vmTierMap = new HashMap<>();
+
+        // Build a map from VM ID to its tier ("device","edge","cloud")
+        Map<Integer, String> globalTierMap = CreateVm.getVmTierMap();
+        for (Vm vm : vmList) {
+            int id = vm.getId();
+            qValues.put(id, 0.0);
+            allocations.put(id, 0);
+            String tier = globalTierMap.get(id);
+            if (tier == null) {
+                throw new IllegalStateException("VM #" + id + " has no tier entry in CreateVm.vmTierMap");
+            }
+            vmTierMap.put(id, tier);
+        }
+        System.out.println("RL Offloading Policy initialized with " + vmList.size() +
+                " VMs, L_MAX=" + L_MAX + ", λ=" + lambda);
+    }
+
+    @Override
+    public int allocate(Cloudlet cloudlet) {
+        boolean explore = random.nextDouble() < explorationRate;
+        int vmId;
+        if (explore) {
+            int idx = random.nextInt(vmList.size());
+            vmId = vmList.get(idx).getId();
+            System.out.println("[Episode " + episodeCount + "] EXPLORING: Randomly selected VM #" + vmId);
+        } else {
+            vmId = getBestVm();
+            System.out.println("[Episode " + episodeCount + "] EXPLOITING: Best VM #" + vmId +
+                    " Q=" + qValues.get(vmId));
+        }
+        allocations.put(vmId, allocations.get(vmId) + 1);
+        return vmId;
+    }
+
+    @Override
+    public void deallocate(int vmId) {
+        allocations.put(vmId, Math.max(0, allocations.get(vmId) - 1));
+    }
+
+    @Override
+    public void onCloudletCompletion(int vmId, Cloudlet cloudlet) {
+        String tier = vmTierMap.get(vmId);
+        double latency = costModel.latency(cloudlet, tier);
+        double energy  = costModel.energy(cloudlet, tier);
+
+        double reward;
+        if (latency > L_MAX) {
+            reward = -1000.0;
+        } else {
+            reward = -(latency + lambda * energy);
+        }
+
+        // accumulate episode reward
+        currentEpisodeReward += reward;
+
+        double oldQ = qValues.get(vmId);
+        double maxNextQ = qValues.values().stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+        double newQ = oldQ + learningRate * (reward + discountFactor * maxNextQ - oldQ);
+        qValues.put(vmId, newQ);
+
+        System.out.printf(
+                "[Episode %d] VM #%d: L=%.4f s, E=%.4f J, R=%.4f → Q: %.4f → %.4f%n",
+                episodeCount, vmId, latency, energy, reward, oldQ, newQ
+        );
+    }
+
+    /**
+     * Returns the VM id with highest Q-value.
+     */
+    public int getBestVm() {
+        return vmList.stream()
+                .max(Comparator.comparingDouble(vm -> qValues.get(vm.getId())))
+                .get().getId();
+    }
+
+    /**
+     * Prepare for a new episode: snapshot Qs and reset counters.
+     */
+    public void startNewEpisode() {
+        lastEpisodeQ.clear();
+        lastEpisodeQ.putAll(qValues);
+        currentEpisodeReward = 0.0;
+        episodeCount++;
+        allocations.replaceAll((k, v) -> 0);
+        System.out.println("\n========== STARTING EPISODE " + episodeCount + " ==========");
+    }
+
+    /**
+     * Check convergence by seeing if Q-values have moved less than threshold.
+     */
+    public boolean hasConverged() {
+        double maxDelta = 0;
+        for (var entry : qValues.entrySet()) {
+            double prev = lastEpisodeQ.getOrDefault(entry.getKey(), 0.0);
+            maxDelta = Math.max(maxDelta, Math.abs(entry.getValue() - prev));
+        }
+        return maxDelta < qValueChangeThreshold;
+    }
+
+    /**
+     * Returns the cumulative reward for the current episode.
+     */
+    public double getCurrentEpisodeReward() {
+        return currentEpisodeReward;
+    }
+
+    // Setters for RL hyperparameters
+    public void setLearningRate(double lr) { this.learningRate = lr; }
+    public void setDiscountFactor(double df) { this.discountFactor = df; }
+    public void setExplorationRate(double er) { this.explorationRate = er; }
+
+    public Map<Integer, Double> getQValues() {
+        return Collections.unmodifiableMap(qValues);
+    }
 }

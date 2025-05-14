@@ -80,14 +80,13 @@ public class CreateVm extends VmAllocationPolicySimple {
     /**
      * Helper: register and return a device-tier VM
      */
-    public static List<Vm> createDeviceVms(int brokerId, int count) {
+    public static List<Vm> createDeviceVms(int userId, int count, int startId) {
         List<Vm> vms = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            int vmId = nextVmId++;
+            int vmId = startId + i;
             vmTierMap.put(vmId, "device");
-            vms.add(new Vm(vmId, brokerId, 1000, 4,
-                2048, 1000, 10000, "Xen",
-                new CloudletSchedulerTimeShared()
+            vms.add(new Vm(vmId, userId, 1200, 1,
+                2048, 1000, 10000, "Xen", new CloudletSchedulerTimeShared()
             ));
         }
         return vms;
@@ -96,12 +95,12 @@ public class CreateVm extends VmAllocationPolicySimple {
     /**
      * Helper: register and return an edge-tier VM
      */
-    public static List<Vm> createEdgeVms(int brokerId, int count) {
+    public static List<Vm> createEdgeVms(int userId, int count, int startId) {
         List<Vm> vms = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            int vmId = nextVmId++;
+            int vmId = startId + i;
             vmTierMap.put(vmId, "edge");
-            vms.add(new Vm(vmId, brokerId, 2400, 2,
+            vms.add(new Vm(vmId, userId, 2500, 4,
                 3072, 10000, 20000, "Xen",
                 new CloudletSchedulerTimeShared()
             ));
@@ -112,12 +111,12 @@ public class CreateVm extends VmAllocationPolicySimple {
     /**
      * Helper: register and return a cloud-tier VM
      */
-    public static List<Vm> createCloudVms(int brokerId, int count) {
+    public static List<Vm> createCloudVms(int userId, int count, int startId) {
         List<Vm> vms = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            int vmId = nextVmId++;
+            int vmId = startId + i;
             vmTierMap.put(vmId, "cloud");
-            vms.add(new Vm(vmId, brokerId, 5000, 4,
+            vms.add(new Vm(vmId, userId, 4000, 4,
                 8192, 50000, 40000, "Xen",
                 new CloudletSchedulerTimeShared()
             ));

@@ -1,6 +1,7 @@
 package org.cloudbus.cloudsim.policies;
 
 import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.Vm;
 
 import java.util.*;
@@ -10,10 +11,15 @@ import java.util.*;
  * If all VMs are busy, cloudlets are queued in arrival order.
  * When a VM finishes, the next queued cloudlet (if any) is dispatched to it.
  */
-public class DynamicThrottled implements VmAllocationPolicy {
+public class DynamicThrottled implements OffloadingPolicy {
     private List<Vm> vmList;
     private Map<Integer, Boolean> vmIdle;
     private Queue<Cloudlet> waitingQueue;
+    private DatacenterBroker broker;
+
+    public void setBroker(DatacenterBroker broker) {
+        this.broker = broker;
+    }
 
     /**
      * Initializes with the available VMs: marks all as idle and clears queue.
@@ -64,8 +70,7 @@ public class DynamicThrottled implements VmAllocationPolicy {
         if (next != null) {
             vmIdle.put(vmId, false);
             next.setGuestId(vmId);
-            // **NOTE** your SimulationManager must detect that a new cloudlet
-            // has been bound, and submit() it to CloudSim at this point.
+            broker.submitCloudletList(Collections.singletonList(next));
         }
     }
 
@@ -75,7 +80,7 @@ public class DynamicThrottled implements VmAllocationPolicy {
      * @param vmId the id of the VM that finished
      * @return the id of the dispatched cloudlet, or -1 if none
      */
-    public int onCloudletCompletion(int vmId) {
+    public void onCloudletCompletion(int vmId) {
         // mark VM idle
         vmIdle.put(vmId, true);
         // if queue not empty, dispatch next
@@ -83,9 +88,8 @@ public class DynamicThrottled implements VmAllocationPolicy {
         if (next != null) {
             vmIdle.put(vmId, false);
             next.setGuestId(vmId);
-            return next.getCloudletId();
+            broker.submitCloudletList(Collections.singletonList(next));
         }
-        return -1;
     }
 
     /**

@@ -6,107 +6,184 @@ import org.cloudbus.cloudsim.cost.*;
 import org.cloudbus.cloudsim.metrics.*;
 import org.cloudbus.cloudsim.models.*;
 import org.cloudbus.cloudsim.policies.*;
-import org.cloudbus.cloudsim.policies.VmAllocationPolicy;
 import org.cloudbus.cloudsim.utils.*;
 
 import java.util.*;
 
 public class SimulationManager {
     private DatacenterBroker broker;
+    private TierSelectionPolicy tierPolicy;
+    private OffloadingPolicy globalPolicy;
+
     private final List<CustomDatacenter> datacenters = new ArrayList<>();
     private final List<Vm> vmList = new ArrayList<>();
     private final Map<String, List<Cloudlet>> tierResults = new HashMap<>();
+    private Map<String,OffloadingPolicy> perTierPolicies = new HashMap<>();
+    private Map<Integer,String> vmTierMap;
+    private static final List<CloudletData> cloudletDataList = CloudletReader.readCloudletData();
 
-    private TierSelectionPolicy tierPolicy;
-    private Map<String,VmAllocationPolicy> vmAllocMap;
+    private static final int maxEpisodes = 100;
+    private static final double L_MAX = 0.025 * cloudletDataList.size();
 
-    // Maximum allowed round-trip latency in seconds
-    private static final double L_MAX = 0.1; // #TODO: decrease
+    public SimulationManager(OffloadingPolicy offloadingPolicy) {
+        this.globalPolicy = Objects.requireNonNull(offloadingPolicy, "offloadingPolicy");
+    }
 
     public void initializeSimulation() throws Exception {
-        int num_user = 1;
-        Calendar calendar = Calendar.getInstance();
-        boolean trace_flag = false;
-
-        CloudSim.init(num_user, calendar, trace_flag);
+        CloudSim.init(1, Calendar.getInstance(), false);
 
         broker = new DatacenterBroker("Broker");
-        int brokerId = broker.getId();
-        System.out.println("Broker ID: " + brokerId);
 
+        datacenters.clear();
         datacenters.add(CreateDatacenter.createDeviceDatacenter());
         datacenters.add(CreateDatacenter.createEdgeDatacenter());
         datacenters.add(CreateDatacenter.createCloudDatacenter());
         System.out.println("Created " + datacenters.size() + (datacenters.size() == 1 ? " Datacenter" : " Datacenters"));
 
-        vmList.addAll(CreateVm.createDeviceVms(brokerId, 5));
-        vmList.addAll(CreateVm.createEdgeVms(brokerId, 5));
-        vmList.addAll(CreateVm.createCloudVms(brokerId, 5));
+        vmList.clear();
+        vmList.addAll(CreateVm.createDeviceVms(broker.getId(), 5, 0));
+        vmList.addAll(CreateVm.createEdgeVms  (broker.getId(), 5, 5));
+        vmList.addAll(CreateVm.createCloudVms (broker.getId(), 5, 10));
         System.out.println("Created " + vmList.size() + (vmList.size() == 1 ? " VM" : " VMs"));
 
         broker.submitGuestList(vmList);
         System.out.println("Submitted " + vmList.size() + " VMs to Broker ID: " + broker.getId());
 
-        CostModel heuristic = new HeuristicCostModel();
-        tierPolicy = new ConstrainedCostOptimizer(L_MAX, heuristic);
-        tierPolicy.initialize(vmList);
-
-        vmAllocMap = new HashMap<>();
+        vmTierMap = CreateVm.getVmTierMap();
+        tierResults.clear();
         for (String tier : List.of("device","edge","cloud")) {
-            List<Vm> tierVms = tierPolicy.getVmsForTier(tier);
-            VmAllocationPolicy offload = new StaticEqualDistribution();
-//             VmAllocationPolicy offload = new DynamicThrottled();
-            offload.initialize(tierVms);
-            vmAllocMap.put(tier, offload);
+            tierResults.put(tier, new ArrayList<>());
+        }
+        if (globalPolicy instanceof RLOffloadingPolicy) {
+            globalPolicy.initialize(vmList);
+        } else {
+            CostModel heuristic = new HeuristicCostModel();
+            tierPolicy = new ConstrainedCostOptimizer(L_MAX, heuristic);
+            tierPolicy.initialize(vmList);
+
+            perTierPolicies = new HashMap<>();
+            for (var tier : List.of("device","edge","cloud")) {
+                OffloadingPolicy p = globalPolicy.getClass().getDeclaredConstructor().newInstance();
+                if (p instanceof DynamicThrottled) {
+                    p.setBroker(broker);
+                }
+                // instantiate a fresh copy of whatever policy class was passed in:
+                var tierVms = tierPolicy.getVmsForTier(tier);
+                // print the VMs for this tier by looping through tierVms
+                for (Vm vm : tierVms) {
+                    System.out.println("VM #" + vm.getId() + " is in " + tier + " tier");
+                }
+                p.initialize(tierVms);
+                perTierPolicies.put(tier, p);
+            }
         }
     }
 
-    /**
-     * Bind & submit all cloudlets
-     */
     public void setupCloudlets() {
         List<Cloudlet> submittedCloudlets = new ArrayList<>();
-        List<CloudletData> cloudletDataList = CloudletReader.readCloudletData();
 
-        System.out.println("\n");
         for (CloudletData data : cloudletDataList) {
             Cloudlet c = CloudletCreator.createCloudlet(data, broker.getId());
             c.setUserId(broker.getId());
 
-            String tier = tierPolicy.selectTier(c);
-            VmAllocationPolicy offload = vmAllocMap.get(tier);
-            int vmId = offload.allocate(c);
-            c.setGuestId(vmId);
-            submittedCloudlets.add(c);
+            int vmId;
+            if (globalPolicy instanceof RLOffloadingPolicy) {
+                vmId = globalPolicy.allocate(c);
+            } else {
+                String tier = tierPolicy.selectTier(c);
+                vmId = perTierPolicies.get(tier).allocate(c);
+            }
+            if (vmId >= 0) {
+                c.setGuestId(vmId);
+                submittedCloudlets.add(c);
+                System.out.println("Cloudlet#" + c.getCloudletId() + " dispatched to VM#" + vmId);
+            } else {
+                System.out.println("Cloudlet#" + c.getCloudletId() + " queued (no idle VM)");
+            }
         }
         broker.submitCloudletList(submittedCloudlets);
         System.out.println("Submitted Cloudlets to Broker ID: " + broker.getId());
     }
 
-    /** Run, deallocate on completion, bucket results by tier. */
     public void runSimulation() {
         System.out.println("\n==========================\n");
         CloudSim.startSimulation();
         List<Cloudlet> completedCloudlets = broker.getCloudletReceivedList();
 
-        System.out.println("Cloudlets received: " + completedCloudlets.size());
-        tierResults.clear();
-        for (String t : List.of("device","edge","cloud")) {
-            tierResults.put(t, new ArrayList<>());
-        }
-
+        tierResults.values().forEach(List::clear);
         var tierMap = CreateVm.getVmTierMap();
+
+        System.out.println("Cloudlets received: " + completedCloudlets.size());
         for (Cloudlet c : completedCloudlets) {
             int vmId = c.getGuestId();
             String tier = tierMap.get(vmId);
-            // free the VM slot
-            vmAllocMap.get(tier).deallocate(vmId);
-            // record
+            System.out.printf("→ Cloudlet#%d ran on VM#%d (mapped to tier=%s)%n", c.getCloudletId(), vmId, tier);
             tierResults.get(tier).add(c);
-        }
 
+            if (globalPolicy instanceof RLOffloadingPolicy) {
+                globalPolicy.onCloudletCompletion(vmId, c);
+                globalPolicy.deallocate(vmId);
+            } else {
+                var tierPolicy = perTierPolicies.get(tier);
+//                tierPolicy.onCloudletCompletion(vmId, c);
+                tierPolicy.deallocate(vmId);
+            }
+        }
         CloudSim.stopSimulation();
         System.out.println("\n==========================\n");
+    }
+
+    public void runOffloadingSimulation() throws Exception {
+        boolean converged = false;
+        int currentEpisode = 0;
+        double bestEpisodeReward = Double.NEGATIVE_INFINITY;
+        int bestEpisode = 0;
+
+        initializeSimulation();
+
+        if (!(globalPolicy instanceof RLOffloadingPolicy)) {
+            setupCloudlets();
+            runSimulation();
+            analyzeResults();
+            return;
+        }
+
+        RLOffloadingPolicy rl = (RLOffloadingPolicy) globalPolicy;
+        do {
+            currentEpisode++;
+            System.out.println("\n========== EPISODE " + currentEpisode + " ==========");
+            rl.startNewEpisode();
+
+            setupCloudlets();
+            runSimulation();
+            analyzeResults();
+
+            double episodeReward = rl.getCurrentEpisodeReward();
+            if (episodeReward > bestEpisodeReward) {
+                bestEpisodeReward = episodeReward;
+                bestEpisode = currentEpisode;
+            }
+            converged = rl.hasConverged();
+            if (!converged && currentEpisode < maxEpisodes) {
+                resetForNextEpisode();
+            }
+        } while (!converged && currentEpisode < maxEpisodes);
+
+        System.out.println(converged
+                ? "Q-Learning converged after " + currentEpisode + " episodes."
+                : "Reached max episodes (" + maxEpisodes + ") without convergence.");
+
+        System.out.println("Final Q-values:");
+        for (var entry : rl.getQValues().entrySet()) {
+            System.out.printf("  VM #%d → Q=%.6f%n", entry.getKey(), entry.getValue());
+        }
+        System.out.println("Greedy policy: always choose VM #" + rl.getBestVm());
+        System.out.println("Best episode reward: " + bestEpisodeReward);
+    }
+
+    private void resetForNextEpisode() throws Exception {
+        CloudSim.stopSimulation();
+        initializeSimulation();
     }
 
     public void analyzeResults() {
@@ -126,6 +203,6 @@ public class SimulationManager {
             System.out.println("Energy consumption: " +
                     String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J");
         }
-        System.out.println("\nTotal Energy consumption: " + String.format("%.6f", totalEnergy) + " J");
+        System.out.println("\nTotal Energy consumption across tiers: " + String.format("%.6f", totalEnergy) + " J");
     }
 }
