@@ -3,6 +3,7 @@ package org.cloudbus.cloudsim.policies;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.models.CustomBroker;
 
 import java.util.*;
 
@@ -15,9 +16,9 @@ public class DynamicThrottled implements OffloadingPolicy {
     private List<Vm> vmList;
     private Map<Integer, Boolean> vmIdle;
     private Queue<Cloudlet> waitingQueue;
-    private DatacenterBroker broker;
+    private CustomBroker broker;
 
-    public void setBroker(DatacenterBroker broker) {
+    public void setBroker(CustomBroker broker) {
         this.broker = broker;
     }
 
@@ -43,6 +44,7 @@ public class DynamicThrottled implements OffloadingPolicy {
      * @return chosen VM id, or -1 if enqueued
      */
     public int allocate(Cloudlet cloudlet) {
+        Map<Integer,String> tierMap = broker.getVmTierMap();
         for (Vm vm : vmList) {
             int vmId = vm.getId();
             if (vmIdle.get(vmId)) {
@@ -77,22 +79,6 @@ public class DynamicThrottled implements OffloadingPolicy {
         }
     }
 
-    /**
-     * Called when a VM finishes processing a cloudlet.
-     * If there are queued cloudlets, dispatches the next one to this VM.
-     * @param vmId the id of the VM that finished
-     */
-    public void onCloudletCompletion(int vmId) {
-        // mark VM idle
-        vmIdle.put(vmId, true);
-        // if queue not empty, dispatch next
-        Cloudlet next = waitingQueue.poll();
-        if (next != null) {
-            vmIdle.put(vmId, false);
-            next.setGuestId(vmId);
-            broker.submitCloudletList(Collections.singletonList(next));
-        }
-    }
 
     /**
      * Snapshot of how many cloudlets are waiting for processing.

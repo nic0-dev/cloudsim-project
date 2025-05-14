@@ -8,13 +8,13 @@ import org.cloudbus.cloudsim.policies.OffloadingPolicy;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ThrottlingBroker extends DatacenterBroker {
+public class CustomBroker extends DatacenterBroker {
     // drop the finals so we can mutate them in setters
     private Map<Integer,String> vmTierMap    = new HashMap<>();
     private Map<String,OffloadingPolicy> tierPolicies = new HashMap<>();
 
-    /** simple single-arg ctor so you can write `new ThrottlingBroker("Broker")` */
-    public ThrottlingBroker(String name) throws Exception {
+    /** simple single-arg ctor so you can write `new CustomBroker("Broker")` */
+    public CustomBroker(String name) throws Exception {
         super(name);
     }
 
@@ -22,6 +22,10 @@ public class ThrottlingBroker extends DatacenterBroker {
     public void setVmTierMap(Map<Integer,String> vmTierMap) {
         this.vmTierMap.clear();
         this.vmTierMap.putAll(vmTierMap);
+    }
+
+    public Map<Integer,String> getVmTierMap() {
+        return Map.copyOf(vmTierMap);
     }
 
     /** after you build your per-tier policies, call this */

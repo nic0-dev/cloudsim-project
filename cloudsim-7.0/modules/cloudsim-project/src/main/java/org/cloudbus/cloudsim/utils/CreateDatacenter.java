@@ -64,8 +64,8 @@ public class CreateDatacenter {
 
         int mipsPerCore = 1200; // MIPS per core
         int numCores = 8;       // For an 8-core Google Pixel 7
-        int ram = 6144;         // 6GB
-        long storage = 40000;   //
+        int ram = 2 * 2048;     // 12 288 MB RAM (fits 6×2048MB device‐VMs)
+        long storage = 2 * 10000;
         int bw = 12000;         // Bandwidth
 
         for (int hostId = 0; hostId < HOSTS_PER_TIER; hostId++) {
@@ -92,8 +92,8 @@ public class CreateDatacenter {
         List<Host> hostList = new ArrayList<>();
         int mips = 8000;
         int numCores = 4;
-        int ram = 10240;
-        long storage = 1000000;
+        int ram = 2 * 3072;     // 18 432 MB RAM (fits 6×3072MB edge‐VMs)
+        long storage = 2 * 100000;
         int bw = 30000;
 
         for (int hostId = HOSTS_PER_TIER; hostId < HOSTS_PER_TIER * 2; hostId++) {
@@ -111,7 +111,7 @@ public class CreateDatacenter {
         List<Host> hostList = new ArrayList<>();
         int mips = 20000;
         int numCores = 8;
-        int ram = 20480;
+        int ram = 6 * 8192;     // 49 152 MB RAM (fits 6×8192MB cloud‐VMs)
         long storage = 10000000;
         int bw = 120000;
 

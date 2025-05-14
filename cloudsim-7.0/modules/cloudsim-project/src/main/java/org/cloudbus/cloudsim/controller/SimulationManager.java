@@ -11,7 +11,7 @@ import org.cloudbus.cloudsim.utils.*;
 import java.util.*;
 
 public class SimulationManager {
-    private ThrottlingBroker broker;
+    private CustomBroker broker;
     private TierSelectionPolicy tierPolicy;
     private OffloadingPolicy globalPolicy;
 
@@ -32,7 +32,7 @@ public class SimulationManager {
     public void initializeSimulation() throws Exception {
         CloudSim.init(1, Calendar.getInstance(), false);
 
-        broker = new ThrottlingBroker("Broker");
+        broker = new CustomBroker("Broker");
 
         datacenters.clear();
         datacenters.add(CreateDatacenter.createDeviceDatacenter());
@@ -40,10 +40,15 @@ public class SimulationManager {
         datacenters.add(CreateDatacenter.createCloudDatacenter());
         System.out.println("Created " + datacenters.size() + (datacenters.size() == 1 ? " Datacenter" : " Datacenters"));
 
+        int deviceHosts = datacenters.get(0).getHostList().size();
+        int edgeHosts   = datacenters.get(1).getHostList().size();
+        int cloudHosts  = datacenters.get(2).getHostList().size();
+        int vmsPerHost = 2;
+
         vmList.clear();
-        vmList.addAll(CreateVm.createDeviceVms(broker.getId(), 5, 0));
-        vmList.addAll(CreateVm.createEdgeVms  (broker.getId(), 5, 5));
-        vmList.addAll(CreateVm.createCloudVms (broker.getId(), 5, 10));
+        vmList.addAll(CreateVm.createDeviceVms(broker.getId(), deviceHosts * 2, 0));
+        vmList.addAll(CreateVm.createEdgeVms(broker.getId(),edgeHosts   * vmsPerHost,deviceHosts * vmsPerHost));
+        vmList.addAll(CreateVm.createCloudVms(broker.getId(),cloudHosts  * vmsPerHost,(deviceHosts + edgeHosts) * vmsPerHost));
         System.out.println("Created " + vmList.size() + (vmList.size() == 1 ? " VM" : " VMs"));
 
         broker.submitGuestList(vmList);
@@ -65,7 +70,7 @@ public class SimulationManager {
             for (var tier : List.of("device","edge","cloud")) {
                 OffloadingPolicy p = globalPolicy.getClass().getDeclaredConstructor().newInstance();
                 if (p instanceof DynamicThrottled) {
-                    p.setBroker(broker);
+                    ((DynamicThrottled)p).setBroker(broker);
                 }
                 // instantiate a fresh copy of whatever policy class was passed in:
                 var tierVms = tierPolicy.getVmsForTier(tier);
