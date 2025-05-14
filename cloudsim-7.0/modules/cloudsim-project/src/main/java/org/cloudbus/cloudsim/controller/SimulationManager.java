@@ -11,7 +11,7 @@ import org.cloudbus.cloudsim.utils.*;
 import java.util.*;
 
 public class SimulationManager {
-    private DatacenterBroker broker;
+    private ThrottlingBroker broker;
     private TierSelectionPolicy tierPolicy;
     private OffloadingPolicy globalPolicy;
 
@@ -32,7 +32,7 @@ public class SimulationManager {
     public void initializeSimulation() throws Exception {
         CloudSim.init(1, Calendar.getInstance(), false);
 
-        broker = new DatacenterBroker("Broker");
+        broker = new ThrottlingBroker("Broker");
 
         datacenters.clear();
         datacenters.add(CreateDatacenter.createDeviceDatacenter());
@@ -69,13 +69,11 @@ public class SimulationManager {
                 }
                 // instantiate a fresh copy of whatever policy class was passed in:
                 var tierVms = tierPolicy.getVmsForTier(tier);
-                // print the VMs for this tier by looping through tierVms
-                for (Vm vm : tierVms) {
-                    System.out.println("VM #" + vm.getId() + " is in " + tier + " tier");
-                }
                 p.initialize(tierVms);
                 perTierPolicies.put(tier, p);
             }
+            broker.setTierPolicies(perTierPolicies);
+            broker.setVmTierMap(vmTierMap);
         }
     }
 
@@ -95,11 +93,11 @@ public class SimulationManager {
             }
             if (vmId >= 0) {
                 c.setGuestId(vmId);
-                submittedCloudlets.add(c);
                 System.out.println("Cloudlet#" + c.getCloudletId() + " dispatched to VM#" + vmId);
             } else {
                 System.out.println("Cloudlet#" + c.getCloudletId() + " queued (no idle VM)");
             }
+            submittedCloudlets.add(c);
         }
         broker.submitCloudletList(submittedCloudlets);
         System.out.println("Submitted Cloudlets to Broker ID: " + broker.getId());
@@ -124,9 +122,13 @@ public class SimulationManager {
                 globalPolicy.onCloudletCompletion(vmId, c);
                 globalPolicy.deallocate(vmId);
             } else {
-                var tierPolicy = perTierPolicies.get(tier);
-//                tierPolicy.onCloudletCompletion(vmId, c);
-                tierPolicy.deallocate(vmId);
+                OffloadingPolicy policy = perTierPolicies.get(tier);
+                if (policy instanceof DynamicThrottled) {
+                    policy.deallocate(vmId);
+                } else {
+                    policy.onCloudletCompletion(vmId, c);
+                    policy.deallocate(vmId);
+                }
             }
         }
         CloudSim.stopSimulation();

@@ -70,6 +70,9 @@ public class DynamicThrottled implements OffloadingPolicy {
         if (next != null) {
             vmIdle.put(vmId, false);
             next.setGuestId(vmId);
+
+            System.out.printf("Cloudlet#%d dispatched to VM#%d%n",next.getCloudletId(), vmId);
+
             broker.submitCloudletList(Collections.singletonList(next));
         }
     }
@@ -78,7 +81,6 @@ public class DynamicThrottled implements OffloadingPolicy {
      * Called when a VM finishes processing a cloudlet.
      * If there are queued cloudlets, dispatches the next one to this VM.
      * @param vmId the id of the VM that finished
-     * @return the id of the dispatched cloudlet, or -1 if none
      */
     public void onCloudletCompletion(int vmId) {
         // mark VM idle

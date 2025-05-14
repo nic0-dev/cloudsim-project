@@ -5,35 +5,42 @@ import org.cloudbus.cloudsim.DatacenterBroker;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.policies.OffloadingPolicy;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ThrottlingBroker extends DatacenterBroker {
-    private final Map<Integer,String> vmTierMap;
-    private final Map<String, OffloadingPolicy> tierPolicies;
+    // drop the finals so we can mutate them in setters
+    private Map<Integer,String> vmTierMap    = new HashMap<>();
+    private Map<String,OffloadingPolicy> tierPolicies = new HashMap<>();
 
-    public ThrottlingBroker(
-            String name,
-            Map<Integer,String> vmTierMap,
-            Map<String,OffloadingPolicy> tierPolicies
-    ) throws Exception {
+    /** simple single-arg ctor so you can write `new ThrottlingBroker("Broker")` */
+    public ThrottlingBroker(String name) throws Exception {
         super(name);
-        this.vmTierMap    = vmTierMap;
-        this.tierPolicies = tierPolicies;
+    }
+
+    /** after you build your maps, call this */
+    public void setVmTierMap(Map<Integer,String> vmTierMap) {
+        this.vmTierMap.clear();
+        this.vmTierMap.putAll(vmTierMap);
+    }
+
+    /** after you build your per-tier policies, call this */
+    public void setTierPolicies(Map<String,OffloadingPolicy> tierPolicies) {
+        this.tierPolicies.clear();
+        this.tierPolicies.putAll(tierPolicies);
     }
 
     @Override
     protected void processCloudletReturn(SimEvent ev) {
-        // first let the parent class do its usual work
         super.processCloudletReturn(ev);
 
-        // now _immediately_ free the VM and re-submit the next queued
-        Cloudlet c   = (Cloudlet)ev.getData();
+        Cloudlet c   = (Cloudlet) ev.getData();
         int     vmId = c.getGuestId();
         String  tier = vmTierMap.get(vmId);
         OffloadingPolicy policy = tierPolicies.get(tier);
 
-        // this deallocate will, if there's a waiting Cloudlet,
-        // bind it to vmId and call broker.submitCloudletList(...)
+        // free & maybe re-enqueue
         policy.deallocate(vmId);
+        policy.onCloudletCompletion(vmId, c);
     }
 }
