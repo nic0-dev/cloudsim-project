@@ -27,7 +27,7 @@ public class PerformanceMetricsCalculator {
             System.out.println("s\t| Start Time: " + String.format("%.6f", cloudlet.getExecStartTime()) + "s\t\t| Execution Time: " + String.format("%.6f", executionTime) + "s |");
             totalTime += cloudlet.getExecFinishTime() - cloudlet.getExecStartTime();
         }
-        return totalTime / cloudlets.size();
+        return totalTime;
     }
 
     public double calculateEnergyConsumption(List<Cloudlet> cloudlets, String tier) {
