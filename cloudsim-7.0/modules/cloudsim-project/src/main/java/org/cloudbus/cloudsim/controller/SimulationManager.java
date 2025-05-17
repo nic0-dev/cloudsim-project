@@ -102,7 +102,7 @@ public class SimulationManager {
         double maxEnergy = 0.0;
 
         for (CloudletData data : cloudletDataList) {
-            Cloudlet c = CloudletCreator.createCloudlet(data, broker.getId());
+            Cloudlet c = CloudletCreator.createCloudlet(data);
             c.setUserId(broker.getId());
 
             int vmId;
@@ -174,14 +174,13 @@ public class SimulationManager {
 
         initializeSimulation();
 
-        if (!(globalPolicy instanceof RLOffloadingPolicy)) {
+        if (!(globalPolicy instanceof RLOffloadingPolicy rl)) {
             setupCloudlets();
             runSimulation();
             analyzeResults();
             return;
         }
 
-        RLOffloadingPolicy rl = (RLOffloadingPolicy) globalPolicy;
         do {
             currentEpisode++;
             System.out.println("\n========== EPISODE " + currentEpisode + " ==========");
@@ -195,7 +194,7 @@ public class SimulationManager {
             analyzeResults();
 
             double episodeReward = rl.getCurrentEpisodeReward();
-            if (episodeReward > bestEpisodeReward || bestEpisodeNum == Double.NEGATIVE_INFINITY) {
+            if (episodeReward > bestEpisodeReward) {
                 bestEpisodeReward = episodeReward;
                 bestEpisodeNum = currentEpisode;
                 bestTierResults = new HashMap<>();

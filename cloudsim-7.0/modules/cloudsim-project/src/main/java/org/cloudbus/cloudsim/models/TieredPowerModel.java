@@ -3,17 +3,14 @@ package org.cloudbus.cloudsim.models;
 import org.cloudbus.cloudsim.power.models.PowerModel;
 
 /**
- * A linear power model for device, edge, or cloud tiers.
- * Power(u) = P_idle + (P_max - P_idle) * u, where u ∈ [0,1]
+ * A power model that estimates the power consumption of a device, edge, or cloud tier.
+ * The model is based on a linear interpolation between idle and maximum power consumption.
  */
 public class TieredPowerModel implements PowerModel {
     private final double overheadPower;
     private final double idlePower;
     private final double maxPower;
 
-    /**
-     * @param tierType "device", "edge", or "cloud"
-     */
     public TieredPowerModel(String tierType) {
         switch (tierType) {
             case "device" -> {
@@ -41,9 +38,9 @@ public class TieredPowerModel implements PowerModel {
             throw new IllegalArgumentException("Utilization must be between 0 and 1");
         }
         // Linear interpolation between idlePower and maxPower
-        // Previous implementation   -> P(u) = P_static + (P_max - P_idle) * u + P_idle
-        // Simplified implementation -> P(u) = P_idle + (P_max - P_idle) * u
+        // P(u) = P_idle + (P_max - P_idle) * u
         double cpuDraw = idlePower + (maxPower - idlePower) * utilization;
+        // The overheadPower is added to the CPU draw to account for the static power consumption
         return overheadPower + cpuDraw;
     }
 }

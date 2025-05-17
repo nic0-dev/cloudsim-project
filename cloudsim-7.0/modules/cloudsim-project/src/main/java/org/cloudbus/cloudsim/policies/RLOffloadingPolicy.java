@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 /**
  * A Q-learning based offloading policy that jointly optimizes latency and energy.
- * Reward = - (latency + λ * energy), with a hard penalty if latency > L_MAX.
+ * Reward = - (latency + λ * energy)
  */
 @Data
 public class RLOffloadingPolicy implements OffloadingPolicy {
@@ -132,8 +132,6 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         double normalizedEnergy = Math.min(1.0, energy / maxEnergy);
 
         double reward = -(lambda * normalizedLatency + (1 - lambda) * normalizedEnergy);
-
-        // accumulate episode reward
         currentEpisodeReward += reward;
 
         double oldQ = qValues.get(vmId);
@@ -147,9 +145,6 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         );
     }
 
-    /**
-     * Prepare for a new episode: snapshot Qs and reset counters.
-     */
     public void startNewEpisode() {
         lastEpisodeQ.clear();
         lastEpisodeQ.putAll(qValues);
@@ -162,10 +157,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         this.maxLatency = maxLatency;
         this.maxEnergy = maxEnergy;
     }
-
-    /**
-     * Check convergence by seeing if Q-values have moved less than threshold.
-     */
+    
     public boolean hasConverged() {
         double maxDelta = 0;
         for (var entry : qValues.entrySet()) {

@@ -41,12 +41,10 @@ public class DynamicThrottled implements OffloadingPolicy {
      * @return chosen VM id, or -1 if enqueued
      */
     public int allocate(Cloudlet cloudlet) {
-        Map<Integer,String> tierMap = broker.getVmTierMap();
         for (Vm vm : vmList) {
             int vmId = vm.getId();
             if (vmIdle.get(vmId)) {
-                // dispatch immediately
-                vmIdle.put(vmId, false);
+                vmIdle.put(vmId, false); // dispatch immediately
                 cloudlet.setGuestId(vmId);
                 return vmId;
             }
@@ -62,33 +60,14 @@ public class DynamicThrottled implements OffloadingPolicy {
      */
     @Override
     public void deallocate(int vmId) {
-        // free the VM
-        vmIdle.put(vmId, true);
-        // dispatch next if waiting
-        Cloudlet next = waitingQueue.poll();
+        vmIdle.put(vmId, true); // free the VM
+        Cloudlet next = waitingQueue.poll(); // dispatch next if waiting
         if (next != null) {
             vmIdle.put(vmId, false);
             next.setGuestId(vmId);
 
             System.out.printf("Cloudlet#%d dispatched to VM#%d%n",next.getCloudletId(), vmId);
-
             broker.submitCloudletList(Collections.singletonList(next));
         }
-    }
-
-
-    /**
-     * Snapshot of how many cloudlets are waiting for processing.
-     */
-    public int getQueueLength() {
-        return waitingQueue.size();
-    }
-
-    /**
-     * Retrieves the current idle status of each VM.
-     * @return an unmodifiable map of VM id to idle status
-     */
-    public Map<Integer, Boolean> getVmIdleStatus() {
-        return Collections.unmodifiableMap(vmIdle);
     }
 }

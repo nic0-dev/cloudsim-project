@@ -9,16 +9,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CustomBroker extends DatacenterBroker {
-    // drop the finals so we can mutate them in setters
     private final Map<Integer,String> vmTierMap = new HashMap<>();
     private final Map<String,OffloadingPolicy> tierPolicies = new HashMap<>();
 
-    /** simple single-arg ctor so you can write `new CustomBroker("Broker")` */
     public CustomBroker(String name) throws Exception {
         super(name);
     }
 
-    /** after you build your maps, call this */
     public void setVmTierMap(Map<Integer,String> vmTierMap) {
         this.vmTierMap.clear();
         this.vmTierMap.putAll(vmTierMap);
@@ -28,19 +25,22 @@ public class CustomBroker extends DatacenterBroker {
         return Map.copyOf(vmTierMap);
     }
 
-    /** after you build your per-tier policies, call this */
     public void setTierPolicies(Map<String,OffloadingPolicy> tierPolicies) {
         this.tierPolicies.clear();
         this.tierPolicies.putAll(tierPolicies);
     }
 
+    /***
+     * This method is called when a Cloudlet is returned from a VM.
+     * It deallocates the VM and re-enqueues the Cloudlet for further processing.
+     */
     @Override
     protected void processCloudletReturn(SimEvent ev) {
         super.processCloudletReturn(ev);
 
-        Cloudlet c   = (Cloudlet) ev.getData();
-        int     vmId = c.getGuestId();
-        String  tier = vmTierMap.get(vmId);
+        Cloudlet c = (Cloudlet) ev.getData();
+        int vmId = c.getGuestId();
+        String tier = vmTierMap.get(vmId);
         OffloadingPolicy policy = tierPolicies.get(tier);
 
         // free & maybe re-enqueue

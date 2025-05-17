@@ -16,6 +16,11 @@ public class PerformanceMetricsCalculator {
         this.cloudPower = new TieredPowerModel("cloud");
     }
 
+    /***
+     * Calculates the execution time of a list of Cloudlets.
+     * @param cloudlets
+     * @return the total time taken to execute all the Cloudlets
+     */
     public double calculateExecutionTime(List<Cloudlet> cloudlets) {
         if (cloudlets.isEmpty()) return 0.0;
 
@@ -29,6 +34,12 @@ public class PerformanceMetricsCalculator {
         return totalTime;
     }
 
+    /***
+     * Calculates the energy consumption of a list of Cloudlets.
+     * @param cloudlets
+     * @param tier
+     * @return the total energy consumed by all the Cloudlets
+     */
     public double calculateEnergyConsumption(List<Cloudlet> cloudlets, String tier) {
         double totalEnergy = 0.0;
         TieredPowerModel powerModel = switch (tier) {

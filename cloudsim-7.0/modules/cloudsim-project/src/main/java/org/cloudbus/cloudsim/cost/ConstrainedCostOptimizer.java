@@ -12,7 +12,6 @@ import java.util.*;
  *   subject to T(c, tier) <= L_MAX
  * among {device, edge, cloud}.
  */
-
 public class ConstrainedCostOptimizer implements TierSelectionPolicy {
     private final double L_MAX;
     private final CostModel costModel;
@@ -59,9 +58,7 @@ public class ConstrainedCostOptimizer implements TierSelectionPolicy {
 
         for (String tier : tiers) {
             double latency = costModel.latency(cloudlet, tier);
-//            System.out.println(tier + " tier's latency " + latency);
             double energy = costModel.energy(cloudlet, tier);
-//            System.out.println(tier + " tier's energy " + energy);
             if (latency <= L_MAX) {
                 if (energy < minEnergy) {
                     minEnergy = energy;
@@ -69,13 +66,12 @@ public class ConstrainedCostOptimizer implements TierSelectionPolicy {
                 }
             }
         }
-//        System.out.println("Selected Tier: " + selectedTier + "\n");
         return selectedTier;
     }
 
     /**
-     * After selectTier(), SimulationManager will call getVmsForTier(...) and then
-     * hand that VM list to a VmAllocationPolicy (static/dynamic) to pick a concrete VM.
+     * @param tier The tier to get VMs for
+     * @return a list of VMs for the specified tier
      */
     @Override
     public List<Vm> getVmsForTier(String tier) {
