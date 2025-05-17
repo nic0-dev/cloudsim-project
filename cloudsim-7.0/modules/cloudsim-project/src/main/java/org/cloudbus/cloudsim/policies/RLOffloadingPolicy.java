@@ -22,16 +22,15 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
     private Map<Integer, String> vmTierMap;
     private Map<Integer, Double> lastEpisodeQ = new HashMap<>();
 
-    // track cumulative reward for the current episode
     private double currentEpisodeReward = 0.0;
 
     private double learningRate;      // α
     private double discountFactor;    // γ
     private double explorationRate;   // ε
 
-    private double qValueChangeThreshold = 0.0575;
+    private double qValueChangeThreshold = 0.0175;
     private final double minExplorationRate = 0.1;
-    private final double explorationDecayRate = 0.99995;
+    private final double explorationDecayRate = 0.995;
     private int episodeCount = 0;
     private double minDelta = Double.MAX_VALUE;
 
@@ -61,7 +60,6 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         Map<Integer, String> globalTierMap = CreateVm.getVmTierMap();
         for (Vm vm : vmList) {
             int id = vm.getId();
-//            qValues.put(id, 0.0);
             qValues.put(vm.getId(), 0.1);
             allocations.put(id, 0);
             String tier = globalTierMap.get(id);
@@ -79,8 +77,6 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         boolean explore = random.nextDouble() < explorationRate;
         int vmId;
         if (explore) {
-//            int idx = random.nextInt(vmList.size());
-//            vmId = vmList.get(idx).getId();
             vmId = selectVmWithSoftmax(0.1);
             System.out.println("[Episode " + episodeCount + "] EXPLORING: Randomly selected VM #" + vmId);
         } else {
@@ -162,12 +158,11 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         lastEpisodeQ.clear();
         lastEpisodeQ.putAll(qValues);
         currentEpisodeReward = 0.0;
-        if (episodeCount % 500 == 0) {
-            explorationRate = 0.3;
+        if (episodeCount % 1000 == 0) {
+            explorationRate = 0.9;
         } else {
             explorationRate = Math.max(minExplorationRate, explorationRate * explorationDecayRate);
         }
-//        explorationRate = Math.max(minExplorationRate, explorationRate * explorationDecayRate);
         episodeCount++;
         allocations.replaceAll((k, v) -> 0);
     }
@@ -188,9 +183,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         }
         System.out.println("Max Q-value change: " + maxDelta);
         minDelta = Math.min(minDelta, maxDelta);
-//        if (episodeCount < 10000) {
-//            return false; // not enough episodes to check convergence
-//        }
+
         return maxDelta < qValueChangeThreshold;
     }
 

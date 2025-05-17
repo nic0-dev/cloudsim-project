@@ -19,14 +19,12 @@ import org.cloudbus.cloudsim.utils.CloudletReader;
 
 public class SimulationController {
     public static void main(String[] args) throws Exception {
-        // ------- Simulation setup parameters -------
-         double L_MAX = 0.25 * CloudletReader.getMaxLength();
-//        double L_MAX = 2.0;              // maximum allowable latency in seconds
-        int maxEpisodes = 150000;
+        double L_MAX = 0.25 * CloudletReader.getMaxLength();
+        int maxEpisodes = 1000000;
 
-//        OffloadingPolicy policy = new StaticEqualDistribution();
-//                OffloadingPolicy policy = new DynamicThrottled();
-                OffloadingPolicy policy = new RLOffloadingPolicy(new HeuristicCostModel(), L_MAX, 0.5, 0.01, 0.9, 0.9);
+        OffloadingPolicy policy = new StaticEqualDistribution();
+//        OffloadingPolicy policy = new DynamicThrottled();
+//        OffloadingPolicy policy = new RLOffloadingPolicy(new HeuristicCostModel(), L_MAX, 0.5, 0.01, 0.9, 0.9);
         SimulationManager simulationManager = new SimulationManager(policy, L_MAX, maxEpisodes);
         simulationManager.runOffloadingSimulation();
     }
