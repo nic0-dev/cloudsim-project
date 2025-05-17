@@ -19,8 +19,8 @@ import org.cloudbus.cloudsim.utils.CloudletReader;
 
 public class SimulationController {
     public static void main(String[] args) throws Exception {
-        double L_MAX = 0.025 * CloudletReader.getMaxLength();
-        int maxEpisodes = 1000000;
+        double L_MAX = 0.025 * CloudletReader.readCloudletData().size();
+        int maxEpisodes = 100000;
 
 //        OffloadingPolicy policy = new StaticEqualDistribution();
 //        OffloadingPolicy policy = new DynamicThrottled();

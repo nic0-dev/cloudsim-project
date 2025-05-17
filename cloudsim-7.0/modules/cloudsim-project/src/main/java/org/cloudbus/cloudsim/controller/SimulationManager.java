@@ -64,7 +64,7 @@ public class SimulationManager {
 
         vmTierMap = CreateVm.getVmTierMap();
         tierResults.clear();
-        for (String tier : List.of("device","edge","cloud")) {
+        for (String tier : List.of("cloud","edge","device")) {
             tierResults.put(tier, new ArrayList<>());
         }
         if (globalPolicy instanceof RLOffloadingPolicy) {
@@ -168,8 +168,6 @@ public class SimulationManager {
     }
 
     public void runOffloadingSimulation() throws Exception {
-        CloudSim.init(1, Calendar.getInstance(), false);
-
         boolean converged = false;
         int currentEpisode = 0;
         double cumulativeSimTime = 0.0;
@@ -243,19 +241,19 @@ public class SimulationManager {
         for (Map.Entry<String, List<Cloudlet>> entry : tierResults.entrySet()) {
             String tier = entry.getKey();
             List<Cloudlet> tierCloudlets = entry.getValue();
+
             System.out.println("\nResults for " + tier + " tier:");
             System.out.println("Number of tasks: " + tierCloudlets.size());
+
             double tierEnergy = calculator.calculateEnergyConsumption(tierCloudlets, tier);
             double executionTime = calculator.calculateExecutionTime(tierCloudlets);
             totalEnergy += tierEnergy;
             simTime += executionTime;
 
-            System.out.println("Average Execution time: " +
-                   executionTime/tierCloudlets.size() + " s");
-            System.out.println("Energy consumption: " +
-                    String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J\n");
+            System.out.println("Average Execution time: " + executionTime/tierCloudlets.size() + " s");
+            System.out.println("Energy consumption: " + String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J\n");
         }
         System.out.println("\nTotal Energy consumption across tiers: " + String.format("%.6f", totalEnergy) + " J");
-        System.out.println("Total Execution time across tiers: " + String.format("%.6f", simTime) + " s");
+        System.out.println("Total Execution time across tiers: " + String.format("%.6f", simTime) + " s\n\n");
     }
 }

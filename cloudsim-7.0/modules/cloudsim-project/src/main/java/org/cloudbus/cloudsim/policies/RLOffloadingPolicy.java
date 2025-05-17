@@ -28,7 +28,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
     private double discountFactor;    // γ
     private double explorationRate;   // ε
 
-    private double qValueChangeThreshold = 0.0175;
+    private double qValueChangeThreshold = 0.02;
     private final double minExplorationRate = 0.1;
     private final double explorationDecayRate = 0.995;
     private int episodeCount = 0;
@@ -158,7 +158,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         lastEpisodeQ.clear();
         lastEpisodeQ.putAll(qValues);
         currentEpisodeReward = 0.0;
-        if (episodeCount % 1000 == 0) {
+        if (episodeCount % 5000 == 0) {
             explorationRate = 0.9;
         } else {
             explorationRate = Math.max(minExplorationRate, explorationRate * explorationDecayRate);
