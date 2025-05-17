@@ -26,11 +26,11 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
 
     private double learningRate;      // α
     private double discountFactor;    // γ
-    private double explorationRate;   // ε
 
-    private double qValueChangeThreshold = 0.02;
-    private final double minExplorationRate = 0.1;
-    private final double explorationDecayRate = 0.995;
+    private double qValueChangeThreshold = 0.0125;
+    private final double initialTemperature = 1.0;
+    private final double minimumTemperature = 0.1;
+    private final double decayRate = 0.995;
     private int episodeCount = 0;
     private double minDelta = Double.MAX_VALUE;
 
@@ -38,13 +38,12 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
     private double maxEnergy;
     private Random random = new Random();
 
-    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda, double alpha, double gamma, double epsilon) {
+    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda, double alpha, double gamma) {
         this.costModel = Objects.requireNonNull(costModel, "costModel");
         this.L_MAX    = L_MAX;
         this.lambda   = lambda;
         this.learningRate = alpha;
         this.discountFactor = gamma;
-        this.explorationRate = epsilon;
     }
 
     @Override
@@ -74,18 +73,16 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
 
     @Override
     public int allocate(Cloudlet cloudlet) {
-        boolean explore = random.nextDouble() < explorationRate;
-        int vmId;
-        if (explore) {
-            vmId = selectVmWithSoftmax(0.1);
-            System.out.println("[Episode " + episodeCount + "] EXPLORING: Randomly selected VM #" + vmId);
-        } else {
-            vmId = getBestVm();
-            System.out.println("[Episode " + episodeCount + "] EXPLOITING: Best VM #" + vmId +
-                    " Q=" + qValues.get(vmId));
-        }
+        double T = getCurrentTemperature();
+        int vmId = selectVmWithSoftmax(T);
         allocations.put(vmId, allocations.get(vmId) + 1);
+        System.out.printf("[Episode %d] SOFTMAX @ T=%.3f → VM #%d (Q=%.4f)%n",
+                episodeCount, T, vmId, qValues.get(vmId));
         return vmId;
+    }
+
+    private double getCurrentTemperature() {
+        return Math.max(minimumTemperature, initialTemperature * Math.pow(decayRate, episodeCount));
     }
 
     private int selectVmWithSoftmax(double temp) {
@@ -93,8 +90,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         double sum = 0.0;
 
         for (int i = 0; i < vmList.size(); i++) {
-            int vmId = vmList.get(i).getId();
-            double qValue = qValues.get(vmId);
+            double qValue = qValues.get(vmList.get(i).getId());
             probabilities[i] = Math.exp(qValue / temp);
             sum += probabilities[i];
         }
@@ -110,7 +106,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
                 return vmList.get(i).getId();
             }
         }
-        return vmList.get(0).getId();
+        return vmList.getFirst().getId();
     }
 
     @Override
@@ -143,26 +139,12 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
     }
 
     /**
-     * Returns the VM id with highest Q-value.
-     */
-    public int getBestVm() {
-        return vmList.stream()
-                .max(Comparator.comparingDouble(vm -> qValues.get(vm.getId())))
-                .get().getId();
-    }
-
-    /**
      * Prepare for a new episode: snapshot Qs and reset counters.
      */
     public void startNewEpisode() {
         lastEpisodeQ.clear();
         lastEpisodeQ.putAll(qValues);
         currentEpisodeReward = 0.0;
-        if (episodeCount % 5000 == 0) {
-            explorationRate = 0.9;
-        } else {
-            explorationRate = Math.max(minExplorationRate, explorationRate * explorationDecayRate);
-        }
         episodeCount++;
         allocations.replaceAll((k, v) -> 0);
     }
