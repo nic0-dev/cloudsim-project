@@ -7,9 +7,9 @@ import org.cloudbus.cloudsim.power.models.PowerModel;
  * Power(u) = P_idle + (P_max - P_idle) * u, where u ∈ [0,1]
  */
 public class TieredPowerModel implements PowerModel {
-    private double overheadPower;
-    private double idlePower;
-    private double maxPower;
+    private final double overheadPower;
+    private final double idlePower;
+    private final double maxPower;
 
     /**
      * @param tierType "device", "edge", or "cloud"

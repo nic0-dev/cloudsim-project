@@ -1,5 +1,6 @@
 package org.cloudbus.cloudsim.utils;
 
+import lombok.Getter;
 import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.models.*;
@@ -15,7 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CloudletReader {
-    private static long minLength = Integer.MAX_VALUE;;
+    @Getter
+    private static long minLength = Integer.MAX_VALUE;
+    @Getter
     private static long maxLength = 0;
 
     public static List<CloudletData> readCloudletData()  {
@@ -54,13 +57,5 @@ public class CloudletReader {
             e.printStackTrace();
         }
         return cloudletDataList;
-    }
-    // get minLength and maxLength
-    public static long getMinLength() {
-        return minLength;
-    }
-
-    public static long getMaxLength() {
-        return maxLength;
     }
 }

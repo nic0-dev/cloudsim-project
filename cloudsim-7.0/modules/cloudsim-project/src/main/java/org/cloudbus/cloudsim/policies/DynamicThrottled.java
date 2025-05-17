@@ -1,5 +1,6 @@
 package org.cloudbus.cloudsim.policies;
 
+import lombok.Data;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.models.CustomBroker;
@@ -11,15 +12,12 @@ import java.util.*;
  * If all VMs are busy, cloudlets are queued in arrival order.
  * When a VM finishes, the next queued cloudlet (if any) is dispatched to it.
  */
+@Data
 public class DynamicThrottled implements OffloadingPolicy {
     private List<Vm> vmList;
     private Map<Integer, Boolean> vmIdle;
     private Queue<Cloudlet> waitingQueue;
     private CustomBroker broker;
-
-    public void setBroker(CustomBroker broker) {
-        this.broker = broker;
-    }
 
     /**
      * Initializes with the available VMs: marks all as idle and clears queue.

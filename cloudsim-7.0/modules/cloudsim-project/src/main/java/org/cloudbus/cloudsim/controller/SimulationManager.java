@@ -13,7 +13,7 @@ import java.util.*;
 public class SimulationManager {
     private CustomBroker broker;
     private TierSelectionPolicy tierPolicy;
-    private OffloadingPolicy globalPolicy;
+    private final OffloadingPolicy globalPolicy;
 
     private final List<CustomDatacenter> datacenters = new ArrayList<>();
     private final List<Vm> vmList = new ArrayList<>();

@@ -17,11 +17,7 @@ public class HeuristicCostModel implements CostModel {
     private static final double DEVICE_MIPS = 1200.0; // Pixel 7 total
     private static final double EDGE_MIPS = 8000.0;
     private static final double CLOUD_MIPS = 20000.0;
-    // Previous Values
-//      private static final double EDGE_MIPS = 2500.0;
-//      private static final double CLOUD_MIPS = 5000.0;
-//    private static final double LATENCY_EDGE = 0.05;
-//    private static final double LATENCY_CLOUD = 0.15;
+
     private static final double BW_UPLINK   = 100000000; // 10 Mbps
     private static final double BW_DOWNLINK = 100000000.0; // 100 Mbps
 

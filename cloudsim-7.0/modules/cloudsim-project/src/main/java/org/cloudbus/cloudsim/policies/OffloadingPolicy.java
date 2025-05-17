@@ -9,5 +9,4 @@ public interface OffloadingPolicy extends VmAllocationPolicy {
      * Default no-op for non-RL policies.
      */
     default void onCloudletCompletion(int vmId, Cloudlet cloudlet) {}
-    default void setBroker(DatacenterBroker broker) { }
 }

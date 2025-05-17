@@ -4,7 +4,6 @@ import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.models.TieredPowerModel;
 
 import java.util.List;
-import java.util.Map;
 
 public class PerformanceMetricsCalculator {
     private final TieredPowerModel devicePower;
@@ -48,12 +47,4 @@ public class PerformanceMetricsCalculator {
         }
         return totalEnergy;
     }
-
-//    public double calculateTotalEnergyConsumption(Map<String, List<Cloudlet>> tierResults) {
-//        double totalEnergy = 0.0;
-//        for (Map.Entry<String, List<Cloudlet>> entry : tierResults.entrySet()) {
-//            totalEnergy += calculateEnergyConsumption(entry.getValue(), entry.getKey());
-//        }
-//        return totalEnergy;
-//    }
 }

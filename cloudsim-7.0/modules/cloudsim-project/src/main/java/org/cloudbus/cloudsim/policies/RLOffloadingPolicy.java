@@ -1,5 +1,6 @@
 package org.cloudbus.cloudsim.policies;
 
+import lombok.Data;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.cost.CostModel;
@@ -11,6 +12,7 @@ import java.util.*;
  * A Q-learning based offloading policy that jointly optimizes latency and energy.
  * Reward = - (latency + λ * energy), with a hard penalty if latency > L_MAX.
  */
+@Data
 public class RLOffloadingPolicy implements OffloadingPolicy {
     private final CostModel costModel;
     private final double L_MAX;
@@ -167,17 +169,6 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         minDelta = Math.min(minDelta, maxDelta);
 
         return maxDelta < qValueChangeThreshold;
-    }
-
-    /**
-     * Returns the cumulative reward for the current episode.
-     */
-    public double getCurrentEpisodeReward() {
-        return currentEpisodeReward;
-    }
-
-    public double getMinDelta() {
-        return minDelta;
     }
 
     public Map<Integer, Double> getQValues() {

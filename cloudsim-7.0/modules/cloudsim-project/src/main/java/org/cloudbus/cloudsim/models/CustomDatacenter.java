@@ -1,10 +1,12 @@
 package org.cloudbus.cloudsim.models;
 
+import lombok.Getter;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.HostEntity;
 
 import java.util.List;
 
+@Getter
 public class CustomDatacenter extends Datacenter {
     private final String tier;  // "device", "edge", or "cloud"
     private final double bandwidth;  // Available bandwidth in Mbps
@@ -27,18 +29,6 @@ public class CustomDatacenter extends Datacenter {
         for (HostEntity host : getHostList()) {
             host.setDatacenter(this);
         }
-    }
-
-    public String getTier() {
-        return tier;
-    }
-
-    public double getBandwidth() {
-        return bandwidth;
-    }
-
-    public double getLatency() {
-        return latency;
     }
 
     // Helper method to calculate transfer time between datacenters

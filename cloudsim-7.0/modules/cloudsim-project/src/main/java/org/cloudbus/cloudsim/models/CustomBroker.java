@@ -10,8 +10,8 @@ import java.util.Map;
 
 public class CustomBroker extends DatacenterBroker {
     // drop the finals so we can mutate them in setters
-    private Map<Integer,String> vmTierMap    = new HashMap<>();
-    private Map<String,OffloadingPolicy> tierPolicies = new HashMap<>();
+    private final Map<Integer,String> vmTierMap = new HashMap<>();
+    private final Map<String,OffloadingPolicy> tierPolicies = new HashMap<>();
 
     /** simple single-arg ctor so you can write `new CustomBroker("Broker")` */
     public CustomBroker(String name) throws Exception {

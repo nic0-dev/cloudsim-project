@@ -16,7 +16,6 @@ import java.util.*;
 public class CreateVm extends VmAllocationPolicySimple {
     private static final Map<Integer, String> vmTierMap = new HashMap<>();
     private final Map<String, HostEntity> vmToHostMap = new HashMap<>();
-    private static int nextVmId = 0;
 
     public CreateVm(List<? extends Host> hostlist) {
         super(hostlist);

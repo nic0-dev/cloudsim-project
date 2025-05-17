@@ -1,7 +1,9 @@
 package org.cloudbus.cloudsim.models;
 
+import lombok.Data;
 import org.cloudbus.cloudsim.UtilizationModel;
 
+@Data
 public class CloudletData {
     private int id;
     private long length;
@@ -31,29 +33,4 @@ public class CloudletData {
         this.utilizationRam = utilizationRam;
         this.utilizationBw = utilizationBw;
     }
-
-    // Getters and setters for each field
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-
-    public long getLength() { return length; }
-    public void setLength(long length) { this.length = length; }
-
-    public int getPesNumber() { return pesNumber; }
-    public void setPesNumber(int pesNumber) { this.pesNumber = pesNumber; }
-
-    public long getFileSize() { return fileSize; }
-    public void setFileSize(long fileSize) { this.fileSize = fileSize; }
-
-    public long getOutputSize() { return outputSize; }
-    public void setOutputSize(long outputSize) { this.outputSize = outputSize; }
-
-    public UtilizationModel getUtilizationCpu() { return utilizationCpu; }
-    public void setUtilizationCpu(UtilizationModel utilizationCpu) { this.utilizationCpu = utilizationCpu; }
-
-    public UtilizationModel getUtilizationRam() { return utilizationRam; }
-    public void setUtilizationRam(UtilizationModel utilizationRam) { this.utilizationRam = utilizationRam; }
-
-    public UtilizationModel getUtilizationBw() { return utilizationBw; }
-    public void setUtilizationBw(UtilizationModel utilizationBw) { this.utilizationBw = utilizationBw; }
 }
