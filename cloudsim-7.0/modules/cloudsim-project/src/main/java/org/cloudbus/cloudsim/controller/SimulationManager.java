@@ -17,16 +17,23 @@ public class SimulationManager {
 
     private final List<CustomDatacenter> datacenters = new ArrayList<>();
     private final List<Vm> vmList = new ArrayList<>();
-    private final Map<String, List<Cloudlet>> tierResults = new HashMap<>();
+    private Map<String, List<Cloudlet>> tierResults = new LinkedHashMap<>();
     private Map<String,OffloadingPolicy> perTierPolicies = new HashMap<>();
     private Map<Integer,String> vmTierMap;
     private static final List<CloudletData> cloudletDataList = CloudletReader.readCloudletData();
 
-    private static final int maxEpisodes = 100;
-    private static final double L_MAX = 0.025 * cloudletDataList.size();
+    private final double L_MAX;
+    private final int maxEpisodes;
+    CostModel heuristic = new HeuristicCostModel();
 
-    public SimulationManager(OffloadingPolicy offloadingPolicy) {
+    private Map<String, List<Cloudlet>> bestTierResults = null;
+    private double bestEpisodeReward = Double.NEGATIVE_INFINITY;
+    private int bestEpisodeNum = -1;
+
+    public SimulationManager(OffloadingPolicy offloadingPolicy, double lmax, int maxEpisode) {
         this.globalPolicy = Objects.requireNonNull(offloadingPolicy, "offloadingPolicy");
+        this.L_MAX =lmax;
+        this.maxEpisodes = maxEpisode;
     }
 
     public void initializeSimulation() throws Exception {
@@ -54,15 +61,21 @@ public class SimulationManager {
         broker.submitGuestList(vmList);
         System.out.println("Submitted " + vmList.size() + " VMs to Broker ID: " + broker.getId());
 
+
         vmTierMap = CreateVm.getVmTierMap();
         tierResults.clear();
-        for (String tier : List.of("device","edge","cloud")) {
+        for (String tier : List.of("cloud","edge","device")) {
             tierResults.put(tier, new ArrayList<>());
         }
         if (globalPolicy instanceof RLOffloadingPolicy) {
             globalPolicy.initialize(vmList);
+            Map<String,OffloadingPolicy> rlMap = new HashMap<>();
+            for (var tier : List.of("device", "edge", "cloud")) {
+                rlMap.put(tier, globalPolicy);
+            }
+            broker.setTierPolicies(rlMap);
+            broker.setVmTierMap(vmTierMap);
         } else {
-            CostModel heuristic = new HeuristicCostModel();
             tierPolicy = new ConstrainedCostOptimizer(L_MAX, heuristic);
             tierPolicy.initialize(vmList);
 
@@ -85,6 +98,9 @@ public class SimulationManager {
     public void setupCloudlets() {
         List<Cloudlet> submittedCloudlets = new ArrayList<>();
 
+        double maxLatency = 0.0;
+        double maxEnergy = 0.0;
+
         for (CloudletData data : cloudletDataList) {
             Cloudlet c = CloudletCreator.createCloudlet(data, broker.getId());
             c.setUserId(broker.getId());
@@ -92,6 +108,10 @@ public class SimulationManager {
             int vmId;
             if (globalPolicy instanceof RLOffloadingPolicy) {
                 vmId = globalPolicy.allocate(c);
+                for (String tier: List.of("device", "edge", "cloud")) {
+                    maxLatency = Math.max(maxLatency, heuristic.latency(c, tier));
+                    maxEnergy = Math.max(maxEnergy, heuristic.energy(c, tier));
+                }
             } else {
                 String tier = tierPolicy.selectTier(c);
                 vmId = perTierPolicies.get(tier).allocate(c);
@@ -103,18 +123,24 @@ public class SimulationManager {
                 System.out.println("Cloudlet#" + c.getCloudletId() + " queued (no idle VM)");
             }
             submittedCloudlets.add(c);
+
+            if (globalPolicy instanceof RLOffloadingPolicy) {
+                ((RLOffloadingPolicy) globalPolicy).setMaxValues(maxLatency, maxEnergy);
+                System.out.printf("Max normalization values: latency=%.4f s, energy=%.4f J%n",
+                        maxLatency, maxEnergy);
+            }
         }
         broker.submitCloudletList(submittedCloudlets);
         System.out.println("Submitted Cloudlets to Broker ID: " + broker.getId());
     }
 
-    public void runSimulation() {
+    public double runSimulation() {
         System.out.println("\n==========================\n");
-        CloudSim.startSimulation();
+        double simTime = CloudSim.startSimulation();
         List<Cloudlet> completedCloudlets = broker.getCloudletReceivedList();
 
         tierResults.values().forEach(List::clear);
-        var tierMap = CreateVm.getVmTierMap();
+        Map<Integer,String> tierMap = CreateVm.getVmTierMap();
 
         System.out.println("Cloudlets received: " + completedCloudlets.size());
         for (Cloudlet c : completedCloudlets) {
@@ -138,13 +164,13 @@ public class SimulationManager {
         }
         CloudSim.stopSimulation();
         System.out.println("\n==========================\n");
+        return simTime;
     }
 
     public void runOffloadingSimulation() throws Exception {
         boolean converged = false;
         int currentEpisode = 0;
-        double bestEpisodeReward = Double.NEGATIVE_INFINITY;
-        int bestEpisode = 0;
+        double cumulativeSimTime = 0.0;
 
         initializeSimulation();
 
@@ -162,16 +188,24 @@ public class SimulationManager {
             rl.startNewEpisode();
 
             setupCloudlets();
-            runSimulation();
+            double thisEpisodeSim = runSimulation();
+            cumulativeSimTime += thisEpisodeSim;
+            System.out.printf("Episode %d simulated time: %.3f s (cumulative: %.3f s)%n", currentEpisode, thisEpisodeSim, cumulativeSimTime);
+
             analyzeResults();
 
             double episodeReward = rl.getCurrentEpisodeReward();
-            if (episodeReward > bestEpisodeReward) {
+            if (episodeReward > bestEpisodeReward || bestEpisodeNum == Double.NEGATIVE_INFINITY) {
                 bestEpisodeReward = episodeReward;
-                bestEpisode = currentEpisode;
+                bestEpisodeNum = currentEpisode;
+                bestTierResults = new HashMap<>();
+                for (var e : tierResults.entrySet()) {
+                    bestTierResults.put(e.getKey(), new ArrayList<>(e.getValue()));
+                }
             }
             converged = rl.hasConverged();
             if (!converged && currentEpisode < maxEpisodes) {
+                broker.getCloudletReceivedList().clear();
                 resetForNextEpisode();
             }
         } while (!converged && currentEpisode < maxEpisodes);
@@ -180,12 +214,18 @@ public class SimulationManager {
                 ? "Q-Learning converged after " + currentEpisode + " episodes."
                 : "Reached max episodes (" + maxEpisodes + ") without convergence.");
 
+        System.out.println("Total simulated time across all episodes: " + cumulativeSimTime + " s\n");
+        System.out.println("Smallest Q-change " + rl.getMinDelta());
+
+        System.out.printf("Best episode: %d with reward %.4f%n", bestEpisodeNum, bestEpisodeReward);
+        tierResults = bestTierResults;
+        analyzeResults();
+
         System.out.println("Final Q-values:");
-        for (var entry : rl.getQValues().entrySet()) {
-            System.out.printf("  VM #%d → Q=%.6f%n", entry.getKey(), entry.getValue());
-        }
-        System.out.println("Greedy policy: always choose VM #" + rl.getBestVm());
-        System.out.println("Best episode reward: " + bestEpisodeReward);
+        rl.getQValues().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(e -> System.out.printf("  VM #%d → Q=%.6f%n", e.getKey(), e.getValue()));
+
     }
 
     private void resetForNextEpisode() throws Exception {
@@ -196,20 +236,24 @@ public class SimulationManager {
     public void analyzeResults() {
         PerformanceMetricsCalculator calculator = new PerformanceMetricsCalculator();
         double totalEnergy = 0.0;
+        double simTime = 0.0;
 
         for (Map.Entry<String, List<Cloudlet>> entry : tierResults.entrySet()) {
             String tier = entry.getKey();
             List<Cloudlet> tierCloudlets = entry.getValue();
-            double tierEnergy = calculator.calculateEnergyConsumption(tierCloudlets, tier);
-            totalEnergy += tierEnergy;
 
             System.out.println("\nResults for " + tier + " tier:");
             System.out.println("Number of tasks: " + tierCloudlets.size());
-            System.out.println("Average Execution time: " +
-                    calculator.calculateExecutionTime(tierCloudlets) + " s");
-            System.out.println("Energy consumption: " +
-                    String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J");
+
+            double tierEnergy = calculator.calculateEnergyConsumption(tierCloudlets, tier);
+            double executionTime = calculator.calculateExecutionTime(tierCloudlets);
+            totalEnergy += tierEnergy;
+            simTime += executionTime;
+
+            System.out.println("Average Execution time: " + executionTime/tierCloudlets.size() + " s");
+            System.out.println("Energy consumption: " + String.format("%.6f", calculator.calculateEnergyConsumption(tierCloudlets, tier)) + " J\n");
         }
         System.out.println("\nTotal Energy consumption across tiers: " + String.format("%.6f", totalEnergy) + " J");
+        System.out.println("Total Execution time across tiers: " + String.format("%.6f", simTime) + " s\n\n");
     }
 }

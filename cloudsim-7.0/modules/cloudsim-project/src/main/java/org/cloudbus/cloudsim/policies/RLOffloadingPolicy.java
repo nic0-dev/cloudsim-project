@@ -22,20 +22,29 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
     private Map<Integer, String> vmTierMap;
     private Map<Integer, Double> lastEpisodeQ = new HashMap<>();
 
-    // track cumulative reward for the current episode
     private double currentEpisodeReward = 0.0;
 
-    private double learningRate = 0.1;      // α
-    private double discountFactor = 0.9;    // γ
-    private double explorationRate = 0.1;   // ε
-    private double qValueChangeThreshold = 1e-5;
+    private double learningRate;      // α
+    private double discountFactor;    // γ
+    private double explorationRate;   // ε
+
+    private double qValueChangeThreshold = 0.02;
+    private final double minExplorationRate = 0.1;
+    private final double explorationDecayRate = 0.995;
     private int episodeCount = 0;
+    private double minDelta = Double.MAX_VALUE;
+
+    private double maxLatency;
+    private double maxEnergy;
     private Random random = new Random();
 
-    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda) {
+    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda, double alpha, double gamma, double epsilon) {
         this.costModel = Objects.requireNonNull(costModel, "costModel");
         this.L_MAX    = L_MAX;
         this.lambda   = lambda;
+        this.learningRate = alpha;
+        this.discountFactor = gamma;
+        this.explorationRate = epsilon;
     }
 
     @Override
@@ -47,12 +56,11 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         qValues = new HashMap<>();
         allocations = new HashMap<>();
         vmTierMap = new HashMap<>();
-
         // Build a map from VM ID to its tier ("device","edge","cloud")
         Map<Integer, String> globalTierMap = CreateVm.getVmTierMap();
         for (Vm vm : vmList) {
             int id = vm.getId();
-            qValues.put(id, 0.0);
+            qValues.put(vm.getId(), 0.1);
             allocations.put(id, 0);
             String tier = globalTierMap.get(id);
             if (tier == null) {
@@ -69,8 +77,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         boolean explore = random.nextDouble() < explorationRate;
         int vmId;
         if (explore) {
-            int idx = random.nextInt(vmList.size());
-            vmId = vmList.get(idx).getId();
+            vmId = selectVmWithSoftmax(0.1);
             System.out.println("[Episode " + episodeCount + "] EXPLORING: Randomly selected VM #" + vmId);
         } else {
             vmId = getBestVm();
@@ -79,6 +86,31 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         }
         allocations.put(vmId, allocations.get(vmId) + 1);
         return vmId;
+    }
+
+    private int selectVmWithSoftmax(double temp) {
+        double[] probabilities = new double[vmList.size()];
+        double sum = 0.0;
+
+        for (int i = 0; i < vmList.size(); i++) {
+            int vmId = vmList.get(i).getId();
+            double qValue = qValues.get(vmId);
+            probabilities[i] = Math.exp(qValue / temp);
+            sum += probabilities[i];
+        }
+        for (int i = 0; i < probabilities.length; i++) {
+            probabilities[i] /= sum;
+        }
+
+        double rand = random.nextDouble();
+        double cumulativeProbability = 0.0;
+        for (int i = 0; i < vmList.size(); i++) {
+            cumulativeProbability += probabilities[i];
+            if (rand <= cumulativeProbability) {
+                return vmList.get(i).getId();
+            }
+        }
+        return vmList.get(0).getId();
     }
 
     @Override
@@ -91,13 +123,10 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         String tier = vmTierMap.get(vmId);
         double latency = costModel.latency(cloudlet, tier);
         double energy  = costModel.energy(cloudlet, tier);
+        double normalizedLatency = Math.min(1.0, latency / maxLatency);
+        double normalizedEnergy = Math.min(1.0, energy / maxEnergy);
 
-        double reward;
-        if (latency > L_MAX) {
-            reward = -1000.0;
-        } else {
-            reward = -(latency + lambda * energy);
-        }
+        double reward = -(lambda * normalizedLatency + (1 - lambda) * normalizedEnergy);
 
         // accumulate episode reward
         currentEpisodeReward += reward;
@@ -129,9 +158,18 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         lastEpisodeQ.clear();
         lastEpisodeQ.putAll(qValues);
         currentEpisodeReward = 0.0;
+        if (episodeCount % 5000 == 0) {
+            explorationRate = 0.9;
+        } else {
+            explorationRate = Math.max(minExplorationRate, explorationRate * explorationDecayRate);
+        }
         episodeCount++;
         allocations.replaceAll((k, v) -> 0);
-        System.out.println("\n========== STARTING EPISODE " + episodeCount + " ==========");
+    }
+
+    public void setMaxValues(double maxLatency, double maxEnergy) {
+        this.maxLatency = maxLatency;
+        this.maxEnergy = maxEnergy;
     }
 
     /**
@@ -143,6 +181,9 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
             double prev = lastEpisodeQ.getOrDefault(entry.getKey(), 0.0);
             maxDelta = Math.max(maxDelta, Math.abs(entry.getValue() - prev));
         }
+        System.out.println("Max Q-value change: " + maxDelta);
+        minDelta = Math.min(minDelta, maxDelta);
+
         return maxDelta < qValueChangeThreshold;
     }
 
@@ -153,10 +194,9 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         return currentEpisodeReward;
     }
 
-    // Setters for RL hyperparameters
-    public void setLearningRate(double lr) { this.learningRate = lr; }
-    public void setDiscountFactor(double df) { this.discountFactor = df; }
-    public void setExplorationRate(double er) { this.explorationRate = er; }
+    public double getMinDelta() {
+        return minDelta;
+    }
 
     public Map<Integer, Double> getQValues() {
         return Collections.unmodifiableMap(qValues);
