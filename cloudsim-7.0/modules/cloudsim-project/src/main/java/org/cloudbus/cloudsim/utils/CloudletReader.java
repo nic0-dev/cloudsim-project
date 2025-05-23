@@ -26,7 +26,7 @@ public class CloudletReader {
         JSONParser parser = new JSONParser();
 
         try {
-            InputStream inputStream = CloudletReader.class.getClassLoader().getResourceAsStream("cloudlets_100.json");
+            InputStream inputStream = CloudletReader.class.getClassLoader().getResourceAsStream("cloudlets_20.json");
 
             if (inputStream == null) {
                 throw new FileNotFoundException("profilingRuns.json not found in classpath");

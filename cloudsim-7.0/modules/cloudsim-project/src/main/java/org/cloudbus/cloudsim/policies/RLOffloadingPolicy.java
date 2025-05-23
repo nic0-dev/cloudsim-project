@@ -28,13 +28,15 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
     private Map<Integer, Integer> allocations;
     private Map<Integer, String> vmTierMap;
     private Map<Integer, Double> lastEpisodeQ = new HashMap<>();
+    private final Set<Integer> visitedVms = new HashSet<>();
 
     private double currentEpisodeReward = 0.0;
+    private double currentTemperature;
 
     private double learningRate;      // α
     private double discountFactor;    // γ
 
-    private double qValueChangeThreshold = 1e-4;
+    private double qValueChangeThreshold = 1e-3;
     private final double initialTemperature = 1.0;
     private final double minimumTemperature = 0.1;
     private final double decayRate = 0.995;
@@ -43,14 +45,15 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
 
     private double maxLatency;
     private double maxEnergy;
-    private Random random = new Random();
+    private Random random;
 
-    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda, double alpha, double gamma) {
+    public RLOffloadingPolicy(CostModel costModel, double L_MAX, double lambda, double alpha, double gamma, long seed) {
         this.costModel = Objects.requireNonNull(costModel, "costModel");
         this.L_MAX    = L_MAX;
         this.lambda   = lambda;
         this.learningRate = alpha;
         this.discountFactor = gamma;
+        this.random = new Random(seed);
     }
 
     @Override
@@ -61,6 +64,7 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
         this.vmList = new ArrayList<>(vmList);
         allocations = new HashMap<>();
         vmTierMap = new HashMap<>();
+        visitedVms.clear();
         Map<Integer, String> globalTierMap = CreateVm.getVmTierMap();
 
         if (qValues == null || qValues.isEmpty()) {
@@ -82,15 +86,16 @@ public class RLOffloadingPolicy implements OffloadingPolicy {
 
     @Override
     public int allocate(Cloudlet cloudlet) {
-        double T = getCurrentTemperature();
-        int vmId = selectVmWithSoftmax(T);
+        currentTemperature = decayTemperature();
+        int vmId = selectVmWithSoftmax(currentTemperature);
         allocations.put(vmId, allocations.get(vmId) + 1);
+        visitedVms.add(vmId);
         System.out.printf("[Episode %d] SOFTMAX @ T=%.3f → VM #%d (Q=%.4f)%n",
-                episodeCount, T, vmId, qValues.get(vmId));
+                episodeCount, currentTemperature, vmId, qValues.get(vmId));
         return vmId;
     }
 
-    private double getCurrentTemperature() {
+    private double decayTemperature() {
         return Math.max(minimumTemperature, initialTemperature * Math.pow(decayRate, episodeCount));
     }
 

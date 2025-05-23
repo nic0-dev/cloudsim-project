@@ -15,6 +15,8 @@ import org.cloudbus.cloudsim.policies.RLOffloadingPolicy;
 import org.cloudbus.cloudsim.policies.StaticEqualDistribution;
 import org.cloudbus.cloudsim.utils.CloudletReader;
 
+import java.util.Random;
+
 
 public class SimulationController {
     public static final String PATH = "cloudsim-7.0/modules/cloudsim-project/src/main/resources/output/";
@@ -26,13 +28,15 @@ public class SimulationController {
 
 //        OffloadingPolicy policy = new StaticEqualDistribution();
 //        OffloadingPolicy policy = new DynamicThrottled();
-        OffloadingPolicy policy = new RLOffloadingPolicy(new HeuristicCostModel(), L_MAX, 0.5, 0.01, 0.9);
+        int randomSeed = 0;
+        OffloadingPolicy policy = new RLOffloadingPolicy(new HeuristicCostModel(), L_MAX, 0.5, 0.01, 0.9, randomSeed);
         if (policy instanceof RLOffloadingPolicy) {
             ((RLOffloadingPolicy) policy).loadQValues(QFILE);
             SimulationManager simulationManager = new SimulationManager(policy, L_MAX, maxEpisodes);
             simulationManager.runOffloadingSimulation();
             ((RLOffloadingPolicy) policy).saveQValues(QFILE);
             System.out.println("Saved Q-values to " + QFILE);
+            System.out.println("Random Seed: " + randomSeed);
         } else {
             SimulationManager simulationManager = new SimulationManager(policy, L_MAX, maxEpisodes);
             simulationManager.runOffloadingSimulation();

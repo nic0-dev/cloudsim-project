@@ -16,7 +16,7 @@ public class HeuristicCostModel implements CostModel {
     private static final double EDGE_MIPS   = 8000.0;
     private static final double CLOUD_MIPS  = 20000.0;
 
-    private static final double BW_UPLINK   = 100000000.0; // 10 Mbps
+    private static final double BW_UPLINK   = 10000000.0; // 10 Mbps
     private static final double BW_DOWNLINK = 100000000.0; // 100 Mbps
 
     private final TieredPowerModel devicePower = new TieredPowerModel("device");
