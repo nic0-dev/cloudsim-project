@@ -13,7 +13,6 @@ public class CreateDatacenter {
     private static final int HOSTS_PER_TIER = 3;    // Create 3 hosts per tier
 
     public static CustomDatacenter createDeviceDatacenter() throws Exception {
-        // Get the host list
         List<Host> hostList = getDeviceHostList();
         System.out.println("Device Tier: Created " + hostList.size() + (hostList.size() == 1 ? " Host" : " Hosts"));
         for (Host host : hostList) {

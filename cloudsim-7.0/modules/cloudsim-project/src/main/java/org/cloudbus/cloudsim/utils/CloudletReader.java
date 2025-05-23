@@ -43,7 +43,7 @@ public class CloudletReader {
                 minLength = Math.min(minLength, length);
                 maxLength = Math.max(maxLength, length);
 
-                int pesNumber = 1; // TODO: set pesNumber based on tier
+                int pesNumber = 1;
                 long fileSize = (Long) jsonObject.get("fileSize");
                 long outputSize = (Long) jsonObject.get("outputSize");
                 UtilizationModel utilizationCpu = new UtilizationModelFull();

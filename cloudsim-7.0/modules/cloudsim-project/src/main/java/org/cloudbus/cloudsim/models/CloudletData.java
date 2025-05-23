@@ -14,7 +14,6 @@ public class CloudletData {
     private UtilizationModel utilizationRam;
     private UtilizationModel utilizationBw;
 
-    // Constructor
     public CloudletData(int id,
                         long length,
                         int pesNumber,

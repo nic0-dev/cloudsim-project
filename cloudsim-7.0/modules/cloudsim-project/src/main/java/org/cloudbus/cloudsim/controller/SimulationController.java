@@ -8,7 +8,6 @@ package org.cloudbus.cloudsim.controller;
  * Authors: Cagas, Mark Nicholas; Saw, Christyne Joie
  */
 
-import org.cloudbus.cloudsim.cost.CostModel;
 import org.cloudbus.cloudsim.cost.HeuristicCostModel;
 import org.cloudbus.cloudsim.policies.DynamicThrottled;
 import org.cloudbus.cloudsim.policies.OffloadingPolicy;
@@ -16,16 +15,31 @@ import org.cloudbus.cloudsim.policies.RLOffloadingPolicy;
 import org.cloudbus.cloudsim.policies.StaticEqualDistribution;
 import org.cloudbus.cloudsim.utils.CloudletReader;
 
+import java.util.Random;
+
 
 public class SimulationController {
+    public static final String PATH = "cloudsim-7.0/modules/cloudsim-project/src/main/resources/output/";
+    public static final String QFILE = PATH + "qValues.json";
+
     public static void main(String[] args) throws Exception {
         double L_MAX = 0.025 * CloudletReader.readCloudletData().size();
         int maxEpisodes = 10000;
 
 //        OffloadingPolicy policy = new StaticEqualDistribution();
 //        OffloadingPolicy policy = new DynamicThrottled();
-        OffloadingPolicy policy = new RLOffloadingPolicy(new HeuristicCostModel(), L_MAX, 0.5, 0.01, 0.9);
-        SimulationManager simulationManager = new SimulationManager(policy, L_MAX, maxEpisodes);
-        simulationManager.runOffloadingSimulation();
+        int randomSeed = 0;
+        OffloadingPolicy policy = new RLOffloadingPolicy(new HeuristicCostModel(), L_MAX, 0.5, 0.01, 0.9, randomSeed);
+        if (policy instanceof RLOffloadingPolicy) {
+            ((RLOffloadingPolicy) policy).loadQValues(QFILE);
+            SimulationManager simulationManager = new SimulationManager(policy, L_MAX, maxEpisodes);
+            simulationManager.runOffloadingSimulation();
+            ((RLOffloadingPolicy) policy).saveQValues(QFILE);
+            System.out.println("Saved Q-values to " + QFILE);
+            System.out.println("Random Seed: " + randomSeed);
+        } else {
+            SimulationManager simulationManager = new SimulationManager(policy, L_MAX, maxEpisodes);
+            simulationManager.runOffloadingSimulation();
+        }
     }
 }
